@@ -7,183 +7,71 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
         body {
-            background: #0f172a;
-            color: #e2e8f0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
+            background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px;
         }
         .header { margin-bottom: 30px; text-align: center; }
         .header h1 { margin: 0; font-size: 2.3rem; letter-spacing: 2px; }
-        .live-indicator { color: #10b981; font-weight: bold; animation: pulse 2s infinite; font-size: 0.9rem; }
+        .live-indicator { color: #10b981; font-weight: bold; animation: pulse 2s infinite; }
         
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-            width: 100%;
-            max-width: 1000px;
-        }
-        .card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
-            transition: transform 0.2s ease, border-color 0.3s ease;
-        }
-        .card:hover { 
-            transform: translateY(-5px); 
-            border-color: rgba(56, 189, 248, 0.4);
-        }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; width: 100%; max-width: 1200px; }
+        .card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; text-align: center; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-5px); border-color: rgba(56, 189, 248, 0.4); }
+        .card h3 { margin: 0 0 10px 0; color: #94a3b8; font-size: 0.9rem; text-transform: uppercase; }
+        .value { font-size: 2.2rem; font-weight: bold; color: #38bdf8; transition: color 0.3s, text-shadow 0.3s; }
+        .value-text { font-size: 1.5rem; font-weight: bold; color: #f59e0b; }
         
-        .card h3 { margin: 0 0 10px 0; color: #94a3b8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
-        
-        .value {
-            font-size: 2.2rem;
-            font-weight: bold;
-            color: #38bdf8;
-            transition: color 0.3s ease, text-shadow 0.3s ease;
-        }
-
-        .gps-value {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #38bdf8;
-            line-height: 1.6;
-            transition: color 0.3s ease, text-shadow 0.3s ease;
-        }
-
-        .maps-btn {
-            display: inline-block;
-            margin-top: 10px;
-            padding: 6px 12px;
-            background: #2563eb;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            transition: background 0.2s ease;
-        }
-        .maps-btn:hover {
-            background: #1d4ed8;
-        }
-
-        /* Pulse glow animation on data change */
-        .value.updated, .gps-value.updated {
-            color: #10b981;
-            text-shadow: 0 0 15px #10b981;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.3; }
-            100% { opacity: 1; }
-        }
+        .value.updated { color: #10b981; text-shadow: 0 0 15px #10b981; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>Air Quality & Environment Monitor</h1>
-        <p class="live-indicator">● LIVE REAL-TIME TELEMETRY</p>
+        <h1>Advanced AQI Dashboard</h1>
+        <p class="live-indicator">● LIVE SENSOR TELEMETRY</p>
     </div>
 
     <div class="grid">
-        <!-- Dust Sensor -->
-        <div class="card">
-            <h3>Dust Density (GP2Y)</h3>
-            <div id="dust" class="value">-- µg/m³</div>
-        </div>
-
-        <!-- MQ135 Sensor -->
-        <div class="card">
-            <h3>Air Quality (MQ135)</h3>
-            <div id="mq135" class="value">-- PPM</div>
-        </div>
-
-        <!-- MQ7 Sensor -->
-        <div class="card">
-            <h3>Carbon Monoxide (MQ7)</h3>
-            <div id="mq7" class="value">-- PPM</div>
-        </div>
-
-        <!-- MQ9 Sensor -->
-        <div class="card">
-            <h3>Combustible Gas (MQ9)</h3>
-            <div id="mq9" class="value">-- PPM</div>
-        </div>
-
-        <!-- DHT22 Temperature -->
-        <div class="card">
-            <h3>Temperature (DHT22)</h3>
-            <div id="temp" class="value">-- °C</div>
-        </div>
-
-        <!-- DHT22 Humidity -->
-        <div class="card">
-            <h3>Humidity (DHT22)</h3>
-            <div id="hum" class="value">-- %</div>
-        </div>
-
-        <!-- Neo-6M GPS Location -->
-        <div class="card" style="grid-column: span 1;">
-            <h3>GPS Location (Neo-6M)</h3>
-            <div id="gps" class="gps-value">Waiting for fix...</div>
-            <a id="maps-link" class="maps-btn" href="#" target="_blank" style="display: none;">Open in Maps</a>
-        </div>
+        <div class="card"><h3>Final AQI</h3><div id="aqi" class="value">--</div></div>
+        <div class="card"><h3>Category</h3><div id="category" class="value value-text">--</div></div>
+        <div class="card"><h3>Dominant</h3><div id="dominant" class="value value-text">--</div></div>
+        <div class="card"><h3>Temperature</h3><div id="temp" class="value">-- °C</div></div>
+        <div class="card"><h3>Humidity</h3><div id="hum" class="value">-- %</div></div>
+        <div class="card"><h3>CO (MQ7)</h3><div id="co" class="value">-- mg/m³</div></div>
+        <div class="card"><h3>CH4 (MQ9)</h3><div id="ch4" class="value">-- ppm</div></div>
+        <div class="card"><h3>SO2 (MQ135)</h3><div id="so2" class="value">-- µg/m³</div></div>
+        <div class="card"><h3>NO2 (MQ131)</h3><div id="no2" class="value">-- µg/m³</div></div>
+        <div class="card"><h3>O3 (MQ131)</h3><div id="o3" class="value">-- µg/m³</div></div>
+        <div class="card"><h3>PM 10</h3><div id="pm10" class="value">-- µg/m³</div></div>
+        <div class="card"><h3>PM 2.5 (GP2Y)</h3><div id="pm25" class="value">-- µg/m³</div></div>
     </div>
 
     <script>
         const socket = io();
-
-        function updateValue(elementId, newValue, unit) {
-            const el = document.getElementById(elementId);
+        function updateValue(id, val, unit) {
+            const el = document.getElementById(id);
             if (!el) return;
-            el.innerText = newValue + ' ' + unit;
-            
+            // Round numbers to 2 decimals if they are numbers
+            if (typeof val === 'number') val = val.toFixed(2);
+            el.innerText = val + (unit ? ' ' + unit : '');
             el.classList.add('updated');
-            setTimeout(() => {
-                el.classList.remove('updated');
-            }, 400);
-        }
-
-        function updateGPS(lat, lon) {
-            const gpsEl = document.getElementById('gps');
-            const mapsLink = document.getElementById('maps-link');
-            
-            gpsEl.innerHTML = `Lat: ${lat.toFixed(4)}<br>Lon: ${lon.toFixed(4)}`;
-            mapsLink.href = `https://www.google.com/maps?q=${lat},${lon}`;
-            mapsLink.style.display = 'inline-block';
-
-            gpsEl.classList.add('updated');
-            setTimeout(() => {
-                gpsEl.classList.remove('updated');
-            }, 400);
+            setTimeout(() => el.classList.remove('updated'), 400);
         }
 
         socket.on('live_data', function(data) {
-            // Dust
-            if (data.gp2y_dust !== undefined) updateValue('dust', data.gp2y_dust, 'µg/m³');
-            // Gas sensors
-            if (data.mq135_air_quality !== undefined) updateValue('mq135', data.mq135_air_quality, 'PPM');
-            if (data.mq7_co !== undefined) updateValue('mq7', data.mq7_co, 'PPM');
-            if (data.mq9_combustible !== undefined) updateValue('mq9', data.mq9_combustible, 'PPM');
-            // Temperature & Humidity
-            if (data.dht22) {
-                if (data.dht22.temp !== undefined) updateValue('temp', data.dht22.temp, '°C');
-                if (data.dht22.hum !== undefined) updateValue('hum', data.dht22.hum, '%');
-            }
-            // Neo-6M GPS
-            if (data.gps && data.gps.lat !== undefined && data.gps.lon !== undefined) {
-                updateGPS(data.gps.lat, data.gps.lon);
-            }
+            if (data.final_aqi !== undefined) updateValue('aqi', data.final_aqi, '');
+            if (data.category !== undefined) updateValue('category', data.category, '');
+            if (data.dominant !== undefined) updateValue('dominant', data.dominant, '');
+            if (data.temp !== undefined) updateValue('temp', data.temp, '°C');
+            if (data.hum !== undefined) updateValue('hum', data.hum, '%');
+            if (data.co !== undefined) updateValue('co', data.co, 'mg/m³');
+            if (data.ch4 !== undefined) updateValue('ch4', data.ch4, 'ppm');
+            if (data.so2 !== undefined) updateValue('so2', data.so2, 'µg/m³');
+            if (data.no2 !== undefined) updateValue('no2', data.no2, 'µg/m³');
+            if (data.o3 !== undefined) updateValue('o3', data.o3, 'µg/m³');
+            if (data.pm10 !== undefined) updateValue('pm10', data.pm10, 'µg/m³');
+            if (data.pm25 !== undefined) updateValue('pm25', data.pm25, 'µg/m³');
         });
     </script>
 </body>
