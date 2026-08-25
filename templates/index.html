@@ -1,1419 +1,2845 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>AeroSense AI — Environmental Telemetry</title>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <style>
-        :root {
-            --bg: #050816;
-            --glass: rgba(255, 255, 255, 0.075);
-            --glass-strong: rgba(255, 255, 255, 0.11);
-            --border: rgba(255, 255, 255, 0.14);
-
-            --text: #f8fafc;
-            --muted: #94a3b8;
-
-            --cyan: #38bdf8;
-            --blue: #60a5fa;
-            --purple: #a78bfa;
-
-            --green: #34d399;
-            --yellow: #fbbf24;
-            --red: #fb7185;
-
-            --shadow:
-                0 20px 60px rgba(0, 0, 0, 0.35);
-
-            --radius: 24px;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            padding: 22px;
-
-            color: var(--text);
-
-            font-family:
-                Inter,
-                ui-sans-serif,
-                system-ui,
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                sans-serif;
-
-            background:
-                radial-gradient(
-                    circle at 10% 10%,
-                    rgba(56, 189, 248, 0.16),
-                    transparent 30%
-                ),
-                radial-gradient(
-                    circle at 90% 15%,
-                    rgba(167, 139, 250, 0.15),
-                    transparent 32%
-                ),
-                radial-gradient(
-                    circle at 50% 100%,
-                    rgba(52, 211, 153, 0.08),
-                    transparent 34%
-                ),
-                var(--bg);
-
-            overflow-x: hidden;
-        }
-
-        /* =====================================================
-           ANIMATED BACKGROUND
-        ===================================================== */
-
-        .ambient {
-            position: fixed;
-            inset: 0;
-            z-index: -2;
-            pointer-events: none;
-            overflow: hidden;
-        }
-
-        .orb {
-            position: absolute;
-            width: 320px;
-            height: 320px;
-
-            border-radius: 50%;
-
-            filter: blur(70px);
-            opacity: 0.18;
-
-            animation:
-                floatOrb 16s ease-in-out infinite alternate;
-        }
-
-        .orb.one {
-            background: #38bdf8;
-            top: -100px;
-            left: -80px;
-        }
-
-        .orb.two {
-            background: #8b5cf6;
-            top: 30%;
-            right: -100px;
-
-            animation-delay: -5s;
-        }
-
-        .orb.three {
-            background: #10b981;
-            bottom: -120px;
-            left: 35%;
-
-            animation-delay: -9s;
-        }
-
-        @keyframes floatOrb {
-            0% {
-                transform:
-                    translate3d(0, 0, 0)
-                    scale(1);
-            }
-
-            50% {
-                transform:
-                    translate3d(70px, -40px, 0)
-                    scale(1.15);
-            }
-
-            100% {
-                transform:
-                    translate3d(-50px, 60px, 0)
-                    scale(0.9);
-            }
-        }
-
-        /* =====================================================
-           COMMON GLASS
-        ===================================================== */
-
-        .glass {
-            background:
-                linear-gradient(
-                    135deg,
-                    rgba(255,255,255,0.11),
-                    rgba(255,255,255,0.035)
-                );
-
-            border: 1px solid var(--border);
-
-            backdrop-filter: blur(24px) saturate(150%);
-            -webkit-backdrop-filter: blur(24px) saturate(150%);
-
-            box-shadow: var(--shadow);
-
-            position: relative;
-            overflow: hidden;
-        }
-
-        .glass::before {
-            content: "";
-
-            position: absolute;
-            inset: 0;
-
-            background:
-                linear-gradient(
-                    120deg,
-                    rgba(255,255,255,0.10),
-                    transparent 30%,
-                    transparent 70%,
-                    rgba(255,255,255,0.04)
-                );
-
-            opacity: 0.7;
-            pointer-events: none;
-        }
-
-        /* =====================================================
-           TOP BAR
-        ===================================================== */
-
-        .topbar {
-            width: 100%;
-            max-width: 1500px;
-            margin: 0 auto 20px;
-
-            padding: 16px 22px;
-
-            border-radius: 20px;
-
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-
-            animation: slideDown 0.8s ease;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-18px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 13px;
-        }
-
-        .brand-logo {
-            width: 42px;
-            height: 42px;
-
-            border-radius: 14px;
-
-            display: grid;
-            place-items: center;
-
-            font-size: 19px;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    rgba(56,189,248,0.35),
-                    rgba(167,139,250,0.35)
-                );
-
-            border: 1px solid rgba(255,255,255,0.16);
-
-            box-shadow:
-                0 0 30px rgba(56,189,248,0.12);
-        }
-
-        .brand-title {
-            font-size: 0.92rem;
-            font-weight: 800;
-            letter-spacing: 2px;
-        }
-
-        .brand-subtitle {
-            color: var(--muted);
-            font-size: 0.72rem;
-            margin-top: 3px;
-            letter-spacing: 0.8px;
-        }
-
-        .status-area {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-
-            font-size: 0.78rem;
-            color: var(--muted);
-        }
-
-        .status-pill {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-
-            padding: 9px 13px;
-
-            border-radius: 999px;
-
-            background: rgba(52,211,153,0.08);
-            border: 1px solid rgba(52,211,153,0.18);
-        }
-
-        .live-dot {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-
-            background: var(--green);
-
-            box-shadow:
-                0 0 0 0 rgba(52,211,153,0.5);
-
-            animation: pulse 1.8s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                box-shadow:
-                    0 0 0 0 rgba(52,211,153,0.45);
-            }
-
-            70% {
-                box-shadow:
-                    0 0 0 10px rgba(52,211,153,0);
-            }
-
-            100% {
-                box-shadow:
-                    0 0 0 0 rgba(52,211,153,0);
-            }
-        }
-
-        .sync {
-            font-family: "JetBrains Mono", "Courier New", monospace;
-            color: var(--cyan);
-        }
-
-        /* =====================================================
-           LAYOUT
-        ===================================================== */
-
-        .dashboard {
-            width: 100%;
-            max-width: 1500px;
-            margin: 0 auto;
-
-            display: grid;
-            grid-template-columns: 360px 1fr;
-
-            gap: 20px;
-        }
-
-        /* =====================================================
-           AQI MASTER CARD
-        ===================================================== */
-
-        .master {
-            min-height: 690px;
-            border-radius: var(--radius);
-
-            padding: 26px;
-
-            display: flex;
-            flex-direction: column;
-
-            animation: fadeUp 0.9s ease;
-        }
-
-        @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .master-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-
-            margin-bottom: 18px;
-        }
-
-        .eyebrow {
-            text-transform: uppercase;
-            font-size: 0.7rem;
-            color: var(--muted);
-            letter-spacing: 1.6px;
-            font-weight: 700;
-        }
-
-        .device-chip {
-            padding: 7px 10px;
-            border-radius: 999px;
-
-            font-size: 0.68rem;
-            font-weight: 700;
-
-            background: rgba(96,165,250,0.08);
-            color: var(--blue);
-
-            border: 1px solid rgba(96,165,250,0.18);
-        }
-
-        .aqi-circle {
-            width: 245px;
-            height: 245px;
-
-            margin: 20px auto 22px;
-
-            border-radius: 50%;
-
-            display: grid;
-            place-items: center;
-
-            position: relative;
-
-            background:
-                radial-gradient(
-                    circle at 50% 50%,
-                    rgba(10,14,23,0.98) 54%,
-                    transparent 55%
-                );
-
-            border: 1px solid rgba(255,255,255,0.14);
-
-            box-shadow:
-                0 0 40px rgba(52,211,153,0.12),
-                inset 0 0 40px rgba(255,255,255,0.03);
-
-            transition:
-                box-shadow 0.5s ease,
-                transform 0.35s ease;
-        }
-
-        .aqi-circle::after {
-            content: "";
-
-            position: absolute;
-            inset: -8px;
-
-            border-radius: 50%;
-
-            border: 1px solid rgba(56,189,248,0.18);
-
-            animation: rotateRing 12s linear infinite;
-        }
-
-        @keyframes rotateRing {
-            from {
-                transform: rotate(0deg);
-            }
-
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .aqi-content {
-            text-align: center;
-            z-index: 2;
-        }
-
-        .aqi-number {
-            font-family:
-                "JetBrains Mono",
-                "Courier New",
-                monospace;
-
-            font-size: 5rem;
-            font-weight: 900;
-            line-height: 1;
-
-            transition:
-                color 0.4s ease,
-                text-shadow 0.4s ease;
-        }
-
-        .aqi-unit {
-            margin-top: 7px;
-            font-size: 0.65rem;
-            letter-spacing: 2px;
-            color: var(--muted);
-            text-transform: uppercase;
-        }
-
-        .category {
-            text-align: center;
-
-            font-size: 1.35rem;
-            font-weight: 800;
-            letter-spacing: 1.2px;
-
-            margin-bottom: 8px;
-        }
-
-        .category-sub {
-            text-align: center;
-            font-size: 0.75rem;
-            color: var(--muted);
-        }
-
-        /* =====================================================
-           ENVIRONMENT
-        ===================================================== */
-
-        .env-grid {
-            margin-top: auto;
-
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-
-            gap: 12px;
-        }
-
-        .env-card {
-            padding: 15px;
-
-            border-radius: 16px;
-
-            background:
-                rgba(255,255,255,0.045);
-
-            border:
-                1px solid rgba(255,255,255,0.08);
-        }
-
-        .env-card-label {
-            color: var(--muted);
-            font-size: 0.68rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .env-value {
-            margin-top: 7px;
-
-            font-family:
-                "JetBrains Mono",
-                "Courier New",
-                monospace;
-
-            font-size: 1.6rem;
-            font-weight: 800;
-        }
-
-        /* =====================================================
-           RIGHT AREA
-        ===================================================== */
-
-        .main-area {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .sensor-grid {
-            display: grid;
-
-            grid-template-columns:
-                repeat(3, minmax(0, 1fr));
-
-            gap: 15px;
-        }
-
-        .sensor-card {
-            min-height: 180px;
-            padding: 18px;
-
-            border-radius: 20px;
-
-            transition:
-                transform 0.35s ease,
-                border-color 0.35s ease,
-                box-shadow 0.35s ease;
-
-            animation: cardIn 0.7s ease backwards;
-        }
-
-        .sensor-card:nth-child(1) { animation-delay: 0.05s; }
-        .sensor-card:nth-child(2) { animation-delay: 0.10s; }
-        .sensor-card:nth-child(3) { animation-delay: 0.15s; }
-        .sensor-card:nth-child(4) { animation-delay: 0.20s; }
-        .sensor-card:nth-child(5) { animation-delay: 0.25s; }
-        .sensor-card:nth-child(6) { animation-delay: 0.30s; }
-
-        @keyframes cardIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .sensor-card:hover {
-            transform: translateY(-5px);
-            box-shadow:
-                0 18px 45px rgba(0,0,0,0.28);
-        }
-
-        .sensor-top {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-        }
-
-        .sensor-name {
-            font-size: 0.77rem;
-            font-weight: 800;
-            letter-spacing: 0.7px;
-        }
-
-        .sensor-type {
-            font-size: 0.63rem;
-            color: var(--cyan);
-            padding: 4px 7px;
-
-            border-radius: 999px;
-
-            background:
-                rgba(56,189,248,0.07);
-
-            border:
-                1px solid rgba(56,189,248,0.13);
-        }
-
-        .sensor-reading {
-            display: flex;
-            align-items: baseline;
-            gap: 5px;
-
-            margin-top: 22px;
-        }
-
-        .reading-number {
-            font-family:
-                "JetBrains Mono",
-                "Courier New",
-                monospace;
-
-            font-size: 2.3rem;
-            font-weight: 900;
-        }
-
-        .reading-unit {
-            font-size: 0.76rem;
-            color: var(--muted);
-        }
-
-        .estimated {
-            margin-top: 5px;
-
-            font-size: 0.62rem;
-            letter-spacing: 1px;
-
-            color: var(--muted);
-            text-transform: uppercase;
-        }
-
-        /* =====================================================
-           BARS
-        ===================================================== */
-
-        .meter {
-            margin-top: 20px;
-        }
-
-        .meter-track {
-            width: 100%;
-            height: 7px;
-
-            overflow: hidden;
-
-            border-radius: 999px;
-
-            background:
-                rgba(255,255,255,0.055);
-        }
-
-        .meter-fill {
-            height: 100%;
-            width: 0%;
-
-            border-radius: inherit;
-
-            background: var(--green);
-
-            box-shadow:
-                0 0 16px currentColor;
-
-            transition:
-                width 0.8s cubic-bezier(.2,.8,.2,1),
-                background 0.4s ease;
-        }
-
-        /* =====================================================
-           CHART
-        ===================================================== */
-
-        .chart {
-            min-height: 370px;
-
-            padding: 20px;
-
-            border-radius: 20px;
-
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chart-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-
-            margin-bottom: 10px;
-        }
-
-        .chart-title {
-            font-size: 0.82rem;
-            font-weight: 800;
-            letter-spacing: 1px;
-        }
-
-        .chart-status {
-            font-size: 0.68rem;
-            color: var(--muted);
-        }
-
-        .chart-wrap {
-            position: relative;
-            flex: 1;
-            min-height: 300px;
-        }
-
-        /* =====================================================
-           FOOTER
-        ===================================================== */
-
-        .footer {
-            width: 100%;
-            max-width: 1500px;
-
-            margin: 18px auto 0;
-
-            display: flex;
-            justify-content: space-between;
-
-            color: var(--muted);
-
-            font-size: 0.68rem;
-            letter-spacing: 0.5px;
-        }
-
-        .footer strong {
-            color: var(--text);
-        }
-
-        /* =====================================================
-           MOBILE
-        ===================================================== */
-
-        @media (max-width: 1100px) {
-
-            .dashboard {
-                grid-template-columns: 1fr;
-            }
-
-            .master {
-                min-height: auto;
-            }
-
-            .sensor-grid {
-                grid-template-columns:
-                    repeat(2, minmax(0, 1fr));
-            }
-        }
-
-        @media (max-width: 700px) {
-
-            body {
-                padding: 12px;
-            }
-
-            .topbar {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .status-area {
-                width: 100%;
-                justify-content: space-between;
-            }
-
-            .sensor-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .aqi-circle {
-                width: 210px;
-                height: 210px;
-            }
-
-            .aqi-number {
-                font-size: 4.2rem;
-            }
-
-            .footer {
-                flex-direction: column;
-                gap: 6px;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>AeroSense AI | Environmental Intelligence</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+/* =========================================================
+   GLOBAL
+========================================================= */
+
+:root {
+
+    --bg-0: #030712;
+    --bg-1: #07111f;
+    --bg-2: #0b1728;
+
+    --glass: rgba(255,255,255,0.055);
+    --glass-2: rgba(255,255,255,0.075);
+    --glass-3: rgba(255,255,255,0.10);
+
+    --border: rgba(255,255,255,0.11);
+    --border-light: rgba(255,255,255,0.18);
+
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --dim: #64748b;
+
+    --cyan: #22d3ee;
+    --blue: #60a5fa;
+    --violet: #a78bfa;
+    --green: #34d399;
+    --yellow: #fbbf24;
+    --orange: #fb923c;
+    --red: #fb7185;
+    --pink: #f472b6;
+
+    --shadow:
+        0 25px 80px rgba(0,0,0,0.42);
+
+    --radius-xl: 28px;
+    --radius-lg: 22px;
+    --radius-md: 17px;
+}
+
+/* =========================================================
+   RESET
+========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+
+    margin: 0;
+    min-height: 100vh;
+
+    padding: 18px;
+
+    color: var(--text);
+
+    font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    background:
+
+        radial-gradient(
+            circle at 10% 8%,
+            rgba(34,211,238,.13),
+            transparent 27%
+        ),
+
+        radial-gradient(
+            circle at 90% 15%,
+            rgba(167,139,250,.13),
+            transparent 30%
+        ),
+
+        radial-gradient(
+            circle at 50% 100%,
+            rgba(52,211,153,.075),
+            transparent 32%
+        ),
+
+        linear-gradient(
+            135deg,
+            var(--bg-0),
+            var(--bg-1),
+            var(--bg-2)
+        );
+
+    overflow-x: hidden;
+}
+
+/* =========================================================
+   AMBIENT BACKGROUND
+========================================================= */
+
+.ambient {
+    position: fixed;
+    inset: 0;
+    z-index: -5;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.orb {
+
+    position: absolute;
+
+    width: 340px;
+    height: 340px;
+
+    border-radius: 50%;
+
+    filter: blur(95px);
+
+    opacity: .12;
+
+    animation:
+        orbit 18s ease-in-out infinite alternate;
+}
+
+.orb-a {
+
+    left: -100px;
+    top: -100px;
+
+    background:
+        #22d3ee;
+}
+
+.orb-b {
+
+    right: -140px;
+    top: 24%;
+
+    background:
+        #8b5cf6;
+
+    animation-delay: -6s;
+}
+
+.orb-c {
+
+    left: 30%;
+    bottom: -160px;
+
+    background:
+        #10b981;
+
+    animation-delay: -11s;
+}
+
+@keyframes orbit {
+
+    0% {
+
+        transform:
+            translate3d(0,0,0)
+            scale(1);
+    }
+
+    50% {
+
+        transform:
+            translate3d(80px,-35px,0)
+            scale(1.15);
+    }
+
+    100% {
+
+        transform:
+            translate3d(-45px,65px,0)
+            scale(.90);
+    }
+}
+
+/* =========================================================
+   GRID LIGHT
+========================================================= */
+
+.grid-overlay {
+
+    position: fixed;
+    inset: 0;
+
+    z-index: -4;
+
+    pointer-events: none;
+
+    background-image:
+
+        linear-gradient(
+            rgba(255,255,255,.025) 1px,
+            transparent 1px
+        ),
+
+        linear-gradient(
+            90deg,
+            rgba(255,255,255,.025) 1px,
+            transparent 1px
+        );
+
+    background-size:
+        55px 55px;
+
+    mask-image:
+        linear-gradient(
+            to bottom,
+            black 0%,
+            transparent 75%
+        );
+}
+
+/* =========================================================
+   GLASS
+========================================================= */
+
+.glass {
+
+    position: relative;
+
+    background:
+
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.095),
+            rgba(255,255,255,.025)
+        );
+
+    border:
+        1px solid var(--border);
+
+    backdrop-filter:
+        blur(26px)
+        saturate(145%);
+
+    -webkit-backdrop-filter:
+        blur(26px)
+        saturate(145%);
+
+    box-shadow:
+        var(--shadow);
+
+    overflow: hidden;
+}
+
+.glass::before {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    pointer-events: none;
+
+    background:
+
+        linear-gradient(
+            125deg,
+            rgba(255,255,255,.09),
+            transparent 24%,
+            transparent 74%,
+            rgba(255,255,255,.025)
+        );
+}
+
+/* =========================================================
+   CONTAINER
+========================================================= */
+
+.app {
+
+    width: 100%;
+    max-width: 1580px;
+
+    margin:
+        0 auto;
+
+    position: relative;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.header {
+
+    min-height: 72px;
+
+    border-radius:
+        var(--radius-lg);
+
+    padding:
+        13px 17px;
+
+    display:
+        flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+
+    gap:
+        15px;
+
+    animation:
+        appear .8s ease;
+}
+
+@keyframes appear {
+
+    from {
+
+        opacity: 0;
+        transform:
+            translateY(-20px);
+    }
+
+    to {
+
+        opacity: 1;
+        transform:
+            translateY(0);
+    }
+}
+
+.brand {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        13px;
+}
+
+.brand-icon {
+
+    width:
+        45px;
+
+    height:
+        45px;
+
+    display:
+        grid;
+
+    place-items:
+        center;
+
+    border-radius:
+        15px;
+
+    background:
+
+        linear-gradient(
+            135deg,
+            rgba(34,211,238,.19),
+            rgba(167,139,250,.18)
+        );
+
+    border:
+        1px solid rgba(255,255,255,.12);
+
+    box-shadow:
+
+        inset 0 1px rgba(255,255,255,.15),
+        0 0 28px rgba(34,211,238,.10);
+
+    font-size:
+        19px;
+}
+
+.brand-name {
+
+    font-size:
+        .92rem;
+
+    font-weight:
+        900;
+
+    letter-spacing:
+        2.3px;
+}
+
+.brand-sub {
+
+    color:
+        var(--muted);
+
+    font-size:
+        .65rem;
+
+    margin-top:
+        3px;
+
+    letter-spacing:
+        1px;
+}
+
+.header-right {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        10px;
+}
+
+.status-pill {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        8px;
+
+    padding:
+        9px 13px;
+
+    border-radius:
+        999px;
+
+    background:
+        rgba(52,211,153,.07);
+
+    border:
+        1px solid rgba(52,211,153,.15);
+
+    color:
+        #d1fae5;
+
+    font-size:
+        .70rem;
+
+    font-weight:
+        800;
+
+    letter-spacing:
+        .8px;
+}
+
+.live-dot {
+
+    width:
+        8px;
+
+    height:
+        8px;
+
+    border-radius:
+        50%;
+
+    background:
+        var(--green);
+
+    box-shadow:
+        0 0 0 0 rgba(52,211,153,.55);
+
+    animation:
+        pulse 1.8s infinite;
+}
+
+@keyframes pulse {
+
+    0% {
+
+        box-shadow:
+            0 0 0 0 rgba(52,211,153,.55);
+    }
+
+    70% {
+
+        box-shadow:
+            0 0 0 9px rgba(52,211,153,0);
+    }
+
+    100% {
+
+        box-shadow:
+            0 0 0 0 rgba(52,211,153,0);
+    }
+}
+
+.sync {
+
+    color:
+        var(--cyan);
+
+    font-family:
+        "JetBrains Mono",
+        "Courier New",
+        monospace;
+
+    font-size:
+        .71rem;
+}
+
+/* =========================================================
+   DEVICE COMMAND BAR
+========================================================= */
+
+.command-bar {
+
+    margin-top:
+        13px;
+
+    padding:
+        12px 16px;
+
+    border-radius:
+        var(--radius-md);
+
+    display:
+        flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+
+    gap:
+        15px;
+}
+
+.command-left {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        10px;
+
+    flex-wrap:
+        wrap;
+}
+
+.command-chip {
+
+    padding:
+        7px 10px;
+
+    border-radius:
+        999px;
+
+    font-size:
+        .61rem;
+
+    letter-spacing:
+        .8px;
+
+    text-transform:
+        uppercase;
+
+    color:
+        var(--muted);
+
+    background:
+        rgba(255,255,255,.045);
+
+    border:
+        1px solid rgba(255,255,255,.08);
+}
+
+.command-chip strong {
+
+    color:
+        var(--text);
+}
+
+.cloud-ok {
+
+    color:
+        var(--green);
+}
+
+.gps-wait {
+
+    color:
+        var(--yellow);
+}
+
+/* =========================================================
+   MAIN GRID
+========================================================= */
+
+.main-grid {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        350px
+        minmax(0,1fr);
+
+    gap:
+        18px;
+
+    margin-top:
+        18px;
+}
+
+/* =========================================================
+   LEFT COLUMN
+========================================================= */
+
+.left-column {
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    gap:
+        18px;
+}
+
+/* =========================================================
+   AQI CARD
+========================================================= */
+
+.aqi-card {
+
+    min-height:
+        580px;
+
+    padding:
+        24px;
+
+    border-radius:
+        var(--radius-xl);
+
+    animation:
+        fadeUp .85s ease;
+}
+
+.card-top {
+
+    display:
+        flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        flex-start;
+}
+
+.section-kicker {
+
+    font-size:
+        .64rem;
+
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        1.5px;
+
+    color:
+        var(--muted);
+
+    font-weight:
+        800;
+}
+
+.section-title {
+
+    margin-top:
+        4px;
+
+    font-size:
+        .92rem;
+
+    font-weight:
+        850;
+}
+
+.device-id {
+
+    padding:
+        7px 9px;
+
+    border-radius:
+        999px;
+
+    font-size:
+        .62rem;
+
+    color:
+        var(--cyan);
+
+    border:
+        1px solid rgba(34,211,238,.15);
+
+    background:
+        rgba(34,211,238,.055);
+}
+
+/* =========================================================
+   AQI GAUGE
+========================================================= */
+
+.gauge {
+
+    width:
+        250px;
+
+    height:
+        250px;
+
+    margin:
+        38px auto 22px;
+
+    border-radius:
+        50%;
+
+    position:
+        relative;
+
+    display:
+        grid;
+
+    place-items:
+        center;
+
+    background:
+
+        conic-gradient(
+            var(--gauge-color, var(--green))
+            var(--gauge-angle, 0deg),
+            rgba(255,255,255,.055)
+            0deg
+        );
+
+    transition:
+        background .8s ease,
+        box-shadow .7s ease;
+}
+
+.gauge::before {
+
+    content:
+        "";
+
+    position:
+        absolute;
+
+    inset:
+        12px;
+
+    border-radius:
+        50%;
+
+    background:
+        rgba(5,8,22,.93);
+
+    border:
+        1px solid rgba(255,255,255,.10);
+
+    box-shadow:
+        inset
+        0 0 45px rgba(255,255,255,.028);
+}
+
+.gauge::after {
+
+    content:
+        "";
+
+    position:
+        absolute;
+
+    inset:
+        -7px;
+
+    border-radius:
+        50%;
+
+    border:
+        1px solid rgba(255,255,255,.06);
+
+    animation:
+        ringRotate 16s linear infinite;
+}
+
+@keyframes ringRotate {
+
+    from {
+        transform:
+            rotate(0deg);
+    }
+
+    to {
+        transform:
+            rotate(360deg);
+    }
+}
+
+.gauge-content {
+
+    z-index:
+        3;
+
+    text-align:
+        center;
+}
+
+.aqi-number {
+
+    font-family:
+        "JetBrains Mono",
+        "Courier New",
+        monospace;
+
+    font-size:
+        5rem;
+
+    font-weight:
+        950;
+
+    line-height:
+        1;
+
+    transition:
+        color .5s ease,
+        text-shadow .5s ease;
+}
+
+.aqi-caption {
+
+    margin-top:
+        8px;
+
+    font-size:
+        .62rem;
+
+    color:
+        var(--muted);
+
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        2px;
+}
+
+.aqi-status {
+
+    text-align:
+        center;
+
+    font-size:
+        1.35rem;
+
+    font-weight:
+        900;
+
+    letter-spacing:
+        1.6px;
+
+    transition:
+        color .4s ease;
+}
+
+.aqi-description {
+
+    text-align:
+        center;
+
+    margin-top:
+        6px;
+
+    color:
+        var(--muted);
+
+    font-size:
+        .72rem;
+
+    line-height:
+        1.6;
+}
+
+/* =========================================================
+   DOMINANT
+========================================================= */
+
+.dominant-box {
+
+    margin-top:
+        30px;
+
+    padding:
+        14px;
+
+    border-radius:
+        17px;
+
+    background:
+        rgba(255,255,255,.038);
+
+    border:
+        1px solid rgba(255,255,255,.075);
+}
+
+.dominant-label {
+
+    color:
+        var(--muted);
+
+    font-size:
+        .60rem;
+
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        1.3px;
+
+    font-weight:
+        800;
+}
+
+.dominant-value {
+
+    margin-top:
+        7px;
+
+    font-family:
+        "JetBrains Mono",
+        "Courier New",
+        monospace;
+
+    font-size:
+        1.3rem;
+
+    font-weight:
+        900;
+
+    color:
+        var(--cyan);
+}
+
+/* =========================================================
+   ENVIRONMENT MINI CARDS
+========================================================= */
+
+.env-grid {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(2,1fr);
+
+    gap:
+        10px;
+
+    margin-top:
+        12px;
+}
+
+.env-card {
+
+    padding:
+        13px;
+
+    border-radius:
+        15px;
+
+    background:
+        rgba(255,255,255,.035);
+
+    border:
+        1px solid rgba(255,255,255,.07);
+}
+
+.env-label {
+
+    color:
+        var(--muted);
+
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        1px;
+
+    font-size:
+        .58rem;
+
+    font-weight:
+        800;
+}
+
+.env-value {
+
+    margin-top:
+        7px;
+
+    font-size:
+        1.45rem;
+
+    font-family:
+        "JetBrains Mono",
+        "Courier New",
+        monospace;
+
+    font-weight:
+        900;
+}
+
+/* =========================================================
+   HEALTH CARD
+========================================================= */
+
+.health-card {
+
+    padding:
+        19px;
+
+    border-radius:
+        var(--radius-lg);
+}
+
+.health-title {
+
+    font-size:
+        .75rem;
+
+    font-weight:
+        900;
+
+    letter-spacing:
+        1px;
+
+    margin-bottom:
+        14px;
+}
+
+.health-row {
+
+    display:
+        flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+
+    padding:
+        10px 0;
+
+    border-bottom:
+        1px solid rgba(255,255,255,.05);
+
+    font-size:
+        .68rem;
+
+    color:
+        var(--muted);
+}
+
+.health-row:last-child {
+
+    border-bottom:
+        0;
+}
+
+.health-state {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        6px;
+
+    color:
+        var(--green);
+
+    font-weight:
+        800;
+}
+
+.health-dot {
+
+    width:
+        6px;
+
+    height:
+        6px;
+
+    border-radius:
+        50%;
+
+    background:
+        var(--green);
+}
+
+/* =========================================================
+   RIGHT AREA
+========================================================= */
+
+.right-column {
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    gap:
+        18px;
+
+    min-width:
+        0;
+}
+
+/* =========================================================
+   SENSOR GRID
+========================================================= */
+
+.sensor-grid {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(3,minmax(0,1fr));
+
+    gap:
+        13px;
+}
+
+.sensor-card {
+
+    padding:
+        17px;
+
+    border-radius:
+        var(--radius-lg);
+
+    min-height:
+        187px;
+
+    transition:
+        transform .35s ease,
+        border-color .35s ease,
+        box-shadow .35s ease;
+
+    animation:
+        cardIn .7s ease backwards;
+}
+
+.sensor-card:hover {
+
+    transform:
+        translateY(-5px);
+
+    box-shadow:
+        0 22px 60px rgba(0,0,0,.32);
+}
+
+.sensor-card:nth-child(1) {
+    animation-delay: .05s;
+}
+
+.sensor-card:nth-child(2) {
+    animation-delay: .10s;
+}
+
+.sensor-card:nth-child(3) {
+    animation-delay: .15s;
+}
+
+.sensor-card:nth-child(4) {
+    animation-delay: .20s;
+}
+
+.sensor-card:nth-child(5) {
+    animation-delay: .25s;
+}
+
+.sensor-card:nth-child(6) {
+    animation-delay: .30s;
+}
+
+@keyframes cardIn {
+
+    from {
+
+        opacity:
+            0;
+
+        transform:
+            translateY(18px);
+    }
+
+    to {
+
+        opacity:
+            1;
+
+        transform:
+            translateY(0);
+    }
+}
+
+.sensor-header {
+
+    display:
+        flex;
+
+    justify-content:
+        space-between;
+
+    gap:
+        8px;
+
+    align-items:
+        center;
+}
+
+.sensor-name {
+
+    font-size:
+        .67rem;
+
+    font-weight:
+        900;
+
+    letter-spacing:
+        .75px;
+}
+
+.sensor-type {
+
+    font-size:
+        .55rem;
+
+    color:
+        var(--cyan);
+
+    border:
+        1px solid rgba(34,211,238,.14);
+
+    background:
+        rgba(34,211,238,.045);
+
+    padding:
+        5px 7px;
+
+    border-radius:
+        999px;
+
+    white-space:
+        nowrap;
+}
+
+.sensor-value {
+
+    display:
+        flex;
+
+    align-items:
+        baseline;
+
+    gap:
+        5px;
+
+    margin-top:
+        21px;
+}
+
+.sensor-number {
+
+    font-family:
+        "JetBrains Mono",
+        "Courier New",
+        monospace;
+
+    font-size:
+        2.05rem;
+
+    font-weight:
+        950;
+
+    letter-spacing:
+        -1px;
+
+    transition:
+        transform .2s ease;
+}
+
+.sensor-unit {
+
+    font-size:
+        .68rem;
+
+    color:
+        var(--muted);
+}
+
+.estimate {
+
+    margin-top:
+        5px;
+
+    font-size:
+        .55rem;
+
+    color:
+        var(--dim);
+
+    letter-spacing:
+        1px;
+
+    text-transform:
+        uppercase;
+}
+
+/* =========================================================
+   SENSOR METERS
+========================================================= */
+
+.meter {
+
+    margin-top:
+        19px;
+}
+
+.meter-head {
+
+    display:
+        flex;
+
+    justify-content:
+        space-between;
+
+    font-size:
+        .55rem;
+
+    color:
+        var(--muted);
+
+    margin-bottom:
+        6px;
+}
+
+.meter-track {
+
+    width:
+        100%;
+
+    height:
+        6px;
+
+    border-radius:
+        99px;
+
+    background:
+        rgba(255,255,255,.045);
+
+    overflow:
+        hidden;
+}
+
+.meter-fill {
+
+    height:
+        100%;
+
+    width:
+        0%;
+
+    border-radius:
+        inherit;
+
+    background:
+        var(--green);
+
+    box-shadow:
+        0 0 15px currentColor;
+
+    transition:
+        width .8s cubic-bezier(.2,.8,.2,1),
+        background .4s ease;
+}
+
+/* =========================================================
+   TELEMETRY & CHART ROW
+========================================================= */
+
+.telemetry-row {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        1fr 1.65fr;
+
+    gap:
+        18px;
+}
+
+/* =========================================================
+   STATUS PANEL
+========================================================= */
+
+.status-card {
+
+    padding:
+        18px;
+
+    border-radius:
+        var(--radius-lg);
+
+    min-height:
+        350px;
+}
+
+.status-title {
+
+    font-size:
+        .76rem;
+
+    font-weight:
+        900;
+
+    letter-spacing:
+        1px;
+}
+
+.status-sub {
+
+    margin-top:
+        3px;
+
+    color:
+        var(--muted);
+
+    font-size:
+        .62rem;
+}
+
+.status-item {
+
+    display:
+        flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+
+    padding:
+        13px 0;
+
+    border-bottom:
+        1px solid rgba(255,255,255,.05);
+}
+
+.status-item:last-child {
+
+    border-bottom:
+        0;
+}
+
+.status-label {
+
+    font-size:
+        .67rem;
+
+    color:
+        var(--muted);
+}
+
+.status-value {
+
+    font-family:
+        "JetBrains Mono",
+        "Courier New",
+        monospace;
+
+    font-size:
+        .68rem;
+
+    font-weight:
+        800;
+}
+
+.value-good {
+
+    color:
+        var(--green);
+}
+
+.value-warn {
+
+    color:
+        var(--yellow);
+}
+
+.value-off {
+
+    color:
+        var(--red);
+}
+
+/* =========================================================
+   CHART
+========================================================= */
+
+.chart-card {
+
+    min-height:
+        350px;
+
+    padding:
+        18px;
+
+    border-radius:
+        var(--radius-lg);
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+}
+
+.chart-heading {
+
+    display:
+        flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+
+    gap:
+        10px;
+
+    margin-bottom:
+        9px;
+}
+
+.chart-title {
+
+    font-size:
+        .76rem;
+
+    font-weight:
+        900;
+
+    letter-spacing:
+        1px;
+}
+
+.chart-caption {
+
+    color:
+        var(--muted);
+
+    font-size:
+        .61rem;
+}
+
+.chart-window {
+
+    padding:
+        6px 9px;
+
+    border:
+        1px solid rgba(255,255,255,.08);
+
+    background:
+        rgba(255,255,255,.035);
+
+    border-radius:
+        999px;
+
+    font-size:
+        .55rem;
+
+    color:
+        var(--cyan);
+}
+
+.chart-container {
+
+    position:
+        relative;
+
+    flex:
+        1;
+
+    min-height:
+        285px;
+}
+
+/* =========================================================
+   ALERT STRIP
+========================================================= */
+
+.alert-strip {
+
+    padding:
+        15px 18px;
+
+    border-radius:
+        var(--radius-lg);
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        13px;
+
+    border:
+        1px solid rgba(56,189,248,.10);
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(56,189,248,.07),
+            rgba(167,139,250,.045)
+        );
+}
+
+.alert-icon {
+
+    width:
+        33px;
+
+    height:
+        33px;
+
+    border-radius:
+        11px;
+
+    display:
+        grid;
+
+    place-items:
+        center;
+
+    background:
+        rgba(56,189,248,.08);
+
+    border:
+        1px solid rgba(56,189,248,.14);
+
+    color:
+        var(--cyan);
+}
+
+.alert-text {
+
+    flex:
+        1;
+}
+
+.alert-main {
+
+    font-size:
+        .70rem;
+
+    font-weight:
+        900;
+}
+
+.alert-sub {
+
+    margin-top:
+        2px;
+
+    font-size:
+        .58rem;
+
+    color:
+        var(--muted);
+}
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.footer {
+
+    margin:
+        15px 2px 3px;
+
+    display:
+        flex;
+
+    justify-content:
+        space-between;
+
+    color:
+        var(--dim);
+
+    font-size:
+        .57rem;
+
+    letter-spacing:
+        .45px;
+}
+
+.footer strong {
+
+    color:
+        var(--muted);
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media(max-width:1200px) {
+
+    .main-grid {
+
+        grid-template-columns:
+            1fr;
+    }
+
+    .aqi-card {
+
+        min-height:
+            auto;
+    }
+
+    .sensor-grid {
+
+        grid-template-columns:
+            repeat(2,minmax(0,1fr));
+    }
+}
+
+@media(max-width:820px) {
+
+    body {
+
+        padding:
+            10px;
+    }
+
+    .header {
+
+        flex-direction:
+            column;
+
+        align-items:
+            flex-start;
+    }
+
+    .header-right {
+
+        width:
+            100%;
+
+        justify-content:
+            space-between;
+    }
+
+    .sensor-grid {
+
+        grid-template-columns:
+            1fr;
+    }
+
+    .telemetry-row {
+
+        grid-template-columns:
+            1fr;
+    }
+
+    .gauge {
+
+        width:
+            220px;
+
+        height:
+            220px;
+    }
+
+    .aqi-number {
+
+        font-size:
+            4.3rem;
+    }
+}
+
+@media(max-width:500px) {
+
+    .command-bar {
+
+        flex-direction:
+            column;
+
+        align-items:
+            flex-start;
+    }
+
+    .header-right {
+
+        flex-direction:
+            column;
+
+        align-items:
+            flex-start;
+    }
+
+    .footer {
+
+        flex-direction:
+            column;
+
+        gap:
+            5px;
+    }
+}
+
+</style>
 </head>
 
 <body>
 
-    <!-- Animated background -->
-    <div class="ambient">
-        <div class="orb one"></div>
-        <div class="orb two"></div>
-        <div class="orb three"></div>
+<div class="ambient">
+    <div class="orb orb-a"></div>
+    <div class="orb orb-b"></div>
+    <div class="orb orb-c"></div>
+</div>
+
+<div class="grid-overlay"></div>
+
+<div class="app">
+
+<!-- =========================================================
+     HEADER
+========================================================= -->
+
+<header class="header glass">
+
+    <div class="brand">
+
+        <div class="brand-icon">
+            ◉
+        </div>
+
+        <div>
+
+            <div class="brand-name">
+                AEROSENSE AI
+            </div>
+
+            <div class="brand-sub">
+                INTELLIGENT AIR QUALITY MONITORING PLATFORM
+            </div>
+
+        </div>
+
     </div>
 
-    <!-- =====================================================
-         TOP BAR
-    ====================================================== -->
 
-    <header class="topbar glass">
+    <div class="header-right">
 
-        <div class="brand">
+        <div class="status-pill">
 
-            <div class="brand-logo">
-                ◉
+            <span class="live-dot"
+                  id="live-dot"></span>
+
+            <span id="connection-text">
+                SYSTEM ONLINE
+            </span>
+
+        </div>
+
+        <div class="sync">
+            <span id="last-sync">
+                WAITING...
+            </span>
+        </div>
+
+    </div>
+
+</header>
+
+
+<!-- =========================================================
+     COMMAND BAR
+========================================================= -->
+
+<div class="command-bar glass">
+
+    <div class="command-left">
+
+        <div class="command-chip">
+            DEVICE:
+            <strong>AQI-001</strong>
+        </div>
+
+        <div class="command-chip">
+            NODE:
+            <strong>ESP32-S3</strong>
+        </div>
+
+        <div class="command-chip cloud-ok">
+            CLOUD:
+            <strong>RENDER</strong>
+        </div>
+
+        <div class="command-chip gps-wait">
+            GPS:
+            <strong id="gps-status">
+                WAITING
+            </strong>
+        </div>
+
+    </div>
+
+    <div class="command-chip">
+        LIVE TELEMETRY
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     MAIN GRID
+========================================================= -->
+
+<div class="main-grid">
+
+
+<!-- =========================================================
+     LEFT
+========================================================= -->
+
+<div class="left-column">
+
+
+<!-- AQI CARD -->
+
+<section class="aqi-card glass">
+
+    <div class="card-top">
+
+        <div>
+
+            <div class="section-kicker">
+                Air Quality Intelligence
             </div>
 
-            <div>
-                <div class="brand-title">
-                    AEROSENSE AI
-                </div>
-
-                <div class="brand-subtitle">
-                    REAL-TIME ENVIRONMENTAL TELEMETRY
-                </div>
+            <div class="section-title">
+                Environmental Status
             </div>
 
         </div>
 
-        <div class="status-area">
-
-            <div class="status-pill">
-                <span class="live-dot"></span>
-                LIVE
-            </div>
-
-            <div>
-                LAST SYNC:
-                <span
-                    class="sync"
-                    id="last-sync">
-                    WAITING...
-                </span>
-            </div>
-
+        <div class="device-id">
+            AQI-001
         </div>
 
-    </header>
+    </div>
 
 
-    <!-- =====================================================
-         MAIN DASHBOARD
-    ====================================================== -->
+    <div class="gauge"
+         id="aqi-gauge">
 
-    <main class="dashboard">
-
-        <!-- =================================================
-             MASTER AQI
-        ================================================== -->
-
-        <section class="master glass">
-
-            <div class="master-head">
-
-                <div>
-                    <div class="eyebrow">
-                        Device Air Quality
-                    </div>
-
-                    <div
-                        class="brand-subtitle">
-                        EDGE SENSOR NODE
-                    </div>
-                </div>
-
-                <div class="device-chip">
-                    AQI-001
-                </div>
-
-            </div>
-
-
-            <div class="aqi-circle" id="aqi-circle">
-
-                <div class="aqi-content">
-
-                    <div
-                        class="aqi-number"
-                        id="aqi">
-                        --
-                    </div>
-
-                    <div class="aqi-unit">
-                        Estimated AQI
-                    </div>
-
-                </div>
-
-            </div>
-
+        <div class="gauge-content">
 
             <div
-                class="category"
-                id="category">
-                STANDBY
+                class="aqi-number"
+                id="aqi">
+                --
             </div>
 
-            <div class="category-sub">
-                Sensor-derived environmental index
+            <div class="aqi-caption">
+                Estimated AQI
             </div>
 
-
-            <div class="master-head"
-                 style="margin-top:26px;">
-
-                <div class="eyebrow">
-                    Dominant Signal
-                </div>
-
-                <div
-                    id="dominant"
-                    style="
-                        color:var(--cyan);
-                        font-family:monospace;
-                        font-weight:800;
-                    ">
-                    --
-                </div>
-
-            </div>
-
-
-            <div class="env-grid">
-
-                <div class="env-card">
-
-                    <div class="env-card-label">
-                        Temperature
-                    </div>
-
-                    <div
-                        class="env-value"
-                        id="temp">
-                        --
-                    </div>
-
-                    <div class="env-card-label">
-                        °C
-                    </div>
-
-                </div>
-
-
-                <div class="env-card">
-
-                    <div class="env-card-label">
-                        Humidity
-                    </div>
-
-                    <div
-                        class="env-value"
-                        id="hum">
-                        --
-                    </div>
-
-                    <div class="env-card-label">
-                        %
-                    </div>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <!-- =================================================
-             TELEMETRY
-        ================================================== -->
-
-        <section class="main-area">
-
-            <div class="sensor-grid">
-
-                <!-- PM2.5 -->
-
-                <article
-                    class="sensor-card glass"
-                    id="card-pm25">
-
-                    <div class="sensor-top">
-
-                        <div class="sensor-name">
-                            DUST / PM2.5
-                        </div>
-
-                        <div class="sensor-type">
-                            GP2Y
-                        </div>
-
-                    </div>
-
-                    <div class="sensor-reading">
-
-                        <span
-                            class="reading-number"
-                            id="pm25">
-                            --
-                        </span>
-
-                        <span class="reading-unit">
-                            µg/m³
-                        </span>
-
-                    </div>
-
-                    <div class="estimated">
-                        ESTIMATED PARTICULATE
-                    </div>
-
-                    <div class="meter">
-
-                        <div class="meter-track">
-
-                            <div
-                                class="meter-fill"
-                                id="bar-pm25">
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-                <!-- PM10 -->
-
-                <article
-                    class="sensor-card glass"
-                    id="card-pm10">
-
-                    <div class="sensor-top">
-
-                        <div class="sensor-name">
-                            DUST / PM10
-                        </div>
-
-                        <div class="sensor-type">
-                            EST.
-                        </div>
-
-                    </div>
-
-                    <div class="sensor-reading">
-
-                        <span
-                            class="reading-number"
-                            id="pm10">
-                            --
-                        </span>
-
-                        <span class="reading-unit">
-                            µg/m³
-                        </span>
-
-                    </div>
-
-                    <div class="estimated">
-                        PROTOTYPE ESTIMATE
-                    </div>
-
-                    <div class="meter">
-
-                        <div class="meter-track">
-
-                            <div
-                                class="meter-fill"
-                                id="bar-pm10">
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-                <!-- CO -->
-
-                <article
-                    class="sensor-card glass"
-                    id="card-co">
-
-                    <div class="sensor-top">
-
-                        <div class="sensor-name">
-                            CARBON MONOXIDE
-                        </div>
-
-                        <div class="sensor-type">
-                            MQ-7
-                        </div>
-
-                    </div>
-
-                    <div class="sensor-reading">
-
-                        <span
-                            class="reading-number"
-                            id="co">
-                            --
-                        </span>
-
-                        <span class="reading-unit">
-                            ppm
-                        </span>
-
-                    </div>
-
-                    <div class="estimated">
-                        ESTIMATED
-                    </div>
-
-                    <div class="meter">
-
-                        <div class="meter-track">
-
-                            <div
-                                class="meter-fill"
-                                id="bar-co">
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-                <!-- CH4 -->
-
-                <article
-                    class="sensor-card glass"
-                    id="card-ch4">
-
-                    <div class="sensor-top">
-
-                        <div class="sensor-name">
-                            METHANE / COMBUSTIBLE
-                        </div>
-
-                        <div class="sensor-type">
-                            MQ-9
-                        </div>
-
-                    </div>
-
-                    <div class="sensor-reading">
-
-                        <span
-                            class="reading-number"
-                            id="ch4">
-                            --
-                        </span>
-
-                        <span class="reading-unit">
-                            ppm
-                        </span>
-
-                    </div>
-
-                    <div class="estimated">
-                        ESTIMATED
-                    </div>
-
-                    <div class="meter">
-
-                        <div class="meter-track">
-
-                            <div
-                                class="meter-fill"
-                                id="bar-ch4">
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-                <!-- NH3 -->
-
-                <article
-                    class="sensor-card glass"
-                    id="card-nh3">
-
-                    <div class="sensor-top">
-
-                        <div class="sensor-name">
-                            AMMONIA / GAS RESPONSE
-                        </div>
-
-                        <div class="sensor-type">
-                            MQ-135
-                        </div>
-
-                    </div>
-
-                    <div class="sensor-reading">
-
-                        <span
-                            class="reading-number"
-                            id="nh3">
-                            --
-                        </span>
-
-                        <span class="reading-unit">
-                            ppm
-                        </span>
-
-                    </div>
-
-                    <div class="estimated">
-                        ESTIMATED
-                    </div>
-
-                    <div class="meter">
-
-                        <div class="meter-track">
-
-                            <div
-                                class="meter-fill"
-                                id="bar-nh3">
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-                <!-- O3 -->
-
-                <article
-                    class="sensor-card glass"
-                    id="card-o3">
-
-                    <div class="sensor-top">
-
-                        <div class="sensor-name">
-                            OZONE
-                        </div>
-
-                        <div class="sensor-type">
-                            MQ-131
-                        </div>
-
-                    </div>
-
-                    <div class="sensor-reading">
-
-                        <span
-                            class="reading-number"
-                            id="o3">
-                            --
-                        </span>
-
-                        <span class="reading-unit">
-                            ppb
-                        </span>
-
-                    </div>
-
-                    <div class="estimated">
-                        ESTIMATED
-                    </div>
-
-                    <div class="meter">
-
-                        <div class="meter-track">
-
-                            <div
-                                class="meter-fill"
-                                id="bar-o3">
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-            </div>
-
-
-            <!-- =================================================
-                 CHART
-            ================================================== -->
-
-            <section class="chart glass">
-
-                <div class="chart-head">
-
-                    <div>
-
-                        <div class="chart-title">
-                            LIVE AQI TELEMETRY
-                        </div>
-
-                        <div
-                            class="chart-status">
-                            Real-time rolling history
-                        </div>
-
-                    </div>
-
-                    <div
-                        class="device-chip">
-                        25 SAMPLE WINDOW
-                    </div>
-
-                </div>
-
-
-                <div class="chart-wrap">
-
-                    <canvas
-                        id="aqiChart">
-                    </canvas>
-
-                </div>
-
-            </section>
-
-        </section>
-
-    </main>
-
-
-    <footer class="footer">
-
-        <div>
-            <strong>AeroSense AI</strong>
-            · ESP32-S3 Environmental Node
         </div>
 
-        <div>
-            Cloud telemetry · Render backend
+    </div>
+
+
+    <div class="aqi-status"
+         id="category">
+        STANDBY
+    </div>
+
+    <div class="aqi-description"
+         id="aqi-description">
+        Awaiting environmental telemetry
+    </div>
+
+
+    <div class="dominant-box">
+
+        <div class="dominant-label">
+            Dominant Environmental Signal
         </div>
 
-    </footer>
+        <div
+            class="dominant-value"
+            id="dominant">
+            --
+        </div>
+
+    </div>
 
 
-    <!-- =====================================================
-         JAVASCRIPT
-    ====================================================== -->
+    <div class="env-grid">
 
-    <script>
+        <div class="env-card">
 
-        /* =================================================
-           CHART
-        ================================================== */
+            <div class="env-label">
+                Temperature
+            </div>
 
-        const ctx =
-            document
-                .getElementById("aqiChart")
-                .getContext("2d");
+            <div
+                class="env-value"
+                id="temp">
+                --
+            </div>
 
+            <div class="env-label">
+                °C
+            </div>
 
-        const gradient =
-            ctx.createLinearGradient(
-                0,
-                0,
-                0,
-                360
-            );
-
-        gradient.addColorStop(
-            0,
-            "rgba(56,189,248,0.28)"
-        );
-
-        gradient.addColorStop(
-            1,
-            "rgba(56,189,248,0.01)"
-        );
+        </div>
 
 
-        const aqiChart =
-            new Chart(ctx, {
+        <div class="env-card">
 
-                type: "line",
+            <div class="env-label">
+                Humidity
+            </div>
 
-                data: {
+            <div
+                class="env-value"
+                id="hum">
+                --
+            </div>
 
-                    labels:
-                        Array(25).fill(""),
+            <div class="env-label">
+                % RH
+            </div>
 
-                    datasets: [{
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- HEALTH -->
+
+<section class="health-card glass">
+
+    <div class="health-title">
+        SYSTEM HEALTH
+    </div>
+
+    <div class="health-row">
+
+        <span>
+            ESP32-S3
+        </span>
+
+        <span class="health-state">
+            <span class="health-dot"></span>
+            ONLINE
+        </span>
+
+    </div>
+
+    <div class="health-row">
+
+        <span>
+            SENSOR NETWORK
+        </span>
+
+        <span
+            class="health-state"
+            id="sensor-health">
+            <span class="health-dot"></span>
+            ACTIVE
+        </span>
+
+    </div>
+
+    <div class="health-row">
+
+        <span>
+            CLOUD API
+        </span>
+
+        <span
+            class="health-state"
+            id="cloud-health">
+            <span class="health-dot"></span>
+            CONNECTED
+        </span>
+
+    </div>
+
+    <div class="health-row">
+
+        <span>
+            GPS MODULE
+        </span>
+
+        <span
+            id="gps-health"
+            class="health-state">
+            <span class="health-dot"
+                  style="background:var(--yellow)"></span>
+            NOT INSTALLED
+        </span>
+
+    </div>
+
+</section>
+
+</div>
+
+
+<!-- =========================================================
+     RIGHT
+========================================================= -->
+
+<div class="right-column">
+
+
+<!-- =========================================================
+     SENSOR GRID
+========================================================= -->
+
+<div class="sensor-grid">
+
+
+<!-- PM2.5 -->
+
+<article
+    class="sensor-card glass"
+    id="card-pm25">
+
+    <div class="sensor-header">
+
+        <div class="sensor-name">
+            PARTICULATE MATTER
+            <br>
+            PM2.5
+        </div>
+
+        <div class="sensor-type">
+            GP2Y
+        </div>
+
+    </div>
+
+    <div class="sensor-value">
+
+        <span
+            class="sensor-number"
+            id="pm25">
+            --
+        </span>
+
+        <span class="sensor-unit">
+            µg/m³
+        </span>
+
+    </div>
+
+    <div class="estimate">
+        ESTIMATED PROTOTYPE VALUE
+    </div>
+
+    <div class="meter">
+
+        <div class="meter-head">
+
+            <span>
+                EXPOSURE
+            </span>
+
+            <span>
+                <span id="pm25-percent">0</span>%
+            </span>
+
+        </div>
+
+        <div class="meter-track">
+
+            <div
+                class="meter-fill"
+                id="bar-pm25">
+            </div>
+
+        </div>
+
+    </div>
+
+</article>
+
+
+<!-- PM10 -->
+
+<article
+    class="sensor-card glass"
+    id="card-pm10">
+
+    <div class="sensor-header">
+
+        <div class="sensor-name">
+            PARTICULATE MATTER
+            <br>
+            PM10
+        </div>
+
+        <div class="sensor-type">
+            EST.
+        </div>
+
+    </div>
+
+    <div class="sensor-value">
+
+        <span
+            class="sensor-number"
+            id="pm10">
+            --
+        </span>
+
+        <span class="sensor-unit">
+            µg/m³
+        </span>
+
+    </div>
+
+    <div class="estimate">
+        DUST-DERIVED ESTIMATE
+    </div>
+
+    <div class="meter">
+
+        <div class="meter-head">
+
+            <span>
+                EXPOSURE
+            </span>
+
+            <span>
+                <span id="pm10-percent">0</span>%
+            </span>
+
+        </div>
+
+        <div class="meter-track">
+
+            <div
+                class="meter-fill"
+                id="bar-pm10">
+            </div>
+
+        </div>
+
+    </div>
+
+</article>
+
+
+<!-- CO -->
+
+<article
+    class="sensor-card glass"
+    id="card-co">
+
+    <div class="sensor-header">
+
+        <div class="sensor-name">
+            CARBON MONOXIDE
+        </div>
+
+        <div class="sensor-type">
+            MQ-7
+        </div>
+
+    </div>
+
+    <div class="sensor-value">
+
+        <span
+            class="sensor-number"
+            id="co">
+            --
+        </span>
+
+        <span class="sensor-unit">
+            ppm
+        </span>
+
+    </div>
+
+    <div class="estimate">
+        ESTIMATED SENSOR VALUE
+    </div>
+
+    <div class="meter">
+
+        <div class="meter-head">
+
+            <span>
+                LEVEL
+            </span>
+
+            <span>
+                <span id="co-percent">0</span>%
+            </span>
+
+        </div>
+
+        <div class="meter-track">
+
+            <div
+                class="meter-fill"
+                id="bar-co">
+            </div>
+
+        </div>
+
+    </div>
+
+</article>
+
+
+<!-- CH4 -->
+
+<article
+    class="sensor-card glass"
+    id="card-ch4">
+
+    <div class="sensor-header">
+
+        <div class="sensor-name">
+            METHANE / COMBUSTIBLE
+        </div>
+
+        <div class="sensor-type">
+            MQ-9
+        </div>
+
+    </div>
+
+    <div class="sensor-value">
+
+        <span
+            class="sensor-number"
+            id="ch4">
+            --
+        </span>
+
+        <span class="sensor-unit">
+            ppm
+        </span>
+
+    </div>
+
+    <div class="estimate">
+        ESTIMATED SENSOR VALUE
+    </div>
+
+    <div class="meter">
+
+        <div class="meter-head">
+
+            <span>
+                LEVEL
+            </span>
+
+            <span>
+                <span id="ch4-percent">0</span>%
+            </span>
+
+        </div>
+
+        <div class="meter-track">
+
+            <div
+                class="meter-fill"
+                id="bar-ch4">
+            </div>
+
+        </div>
+
+    </div>
+
+</article>
+
+
+<!-- NH3 -->
+
+<article
+    class="sensor-card glass"
+    id="card-nh3">
+
+    <div class="sensor-header">
+
+        <div class="sensor-name">
+            AMMONIA / GAS RESPONSE
+        </div>
+
+        <div class="sensor-type">
+            MQ-135
+        </div>
+
+    </div>
+
+    <div class="sensor-value">
+
+        <span
+            class="sensor-number"
+            id="nh3">
+            --
+        </span>
+
+        <span class="sensor-unit">
+            ppm
+        </span>
+
+    </div>
+
+    <div class="estimate">
+        ESTIMATED SENSOR VALUE
+    </div>
+
+    <div class="meter">
+
+        <div class="meter-head">
+
+            <span>
+                LEVEL
+            </span>
+
+            <span>
+                <span id="nh3-percent">0</span>%
+            </span>
+
+        </div>
+
+        <div class="meter-track">
+
+            <div
+                class="meter-fill"
+                id="bar-nh3">
+            </div>
+
+        </div>
+
+    </div>
+
+</article>
+
+
+<!-- O3 -->
+
+<article
+    class="sensor-card glass"
+    id="card-o3">
+
+    <div class="sensor-header">
+
+        <div class="sensor-name">
+            OZONE
+        </div>
+
+        <div class="sensor-type">
+            MQ-131
+        </div>
+
+    </div>
+
+    <div class="sensor-value">
+
+        <span
+            class="sensor-number"
+            id="o3">
+            --
+        </span>
+
+        <span class="sensor-unit">
+            ppb
+        </span>
+
+    </div>
+
+    <div class="estimate">
+        ESTIMATED SENSOR VALUE
+    </div>
+
+    <div class="meter">
+
+        <div class="meter-head">
+
+            <span>
+                LEVEL
+            </span>
+
+            <span>
+                <span id="o3-percent">0</span>%
+            </span>
+
+        </div>
+
+        <div class="meter-track">
+
+            <div
+                class="meter-fill"
+                id="bar-o3">
+            </div>
+
+        </div>
+
+    </div>
+
+</article>
+
+</div>
+
+
+<!-- =========================================================
+     TELEMETRY + CHART
+========================================================= -->
+
+<div class="telemetry-row">
+
+
+<!-- STATUS -->
+
+<section class="status-card glass">
+
+    <div class="status-title">
+        NODE TELEMETRY
+    </div>
+
+    <div class="status-sub">
+        Real-time system diagnostics
+    </div>
+
+
+    <div class="status-item">
+
+        <span class="status-label">
+            DEVICE
+        </span>
+
+        <span
+            class="status-value"
+            id="device-status">
+            AQI-001
+        </span>
+
+    </div>
+
+
+    <div class="status-item">
+
+        <span class="status-label">
+            CONTROLLER
+        </span>
+
+        <span
+            class="status-value value-good">
+            ESP32-S3
+        </span>
+
+    </div>
+
+
+    <div class="status-item">
+
+        <span class="status-label">
+            TELEMETRY
+        </span>
+
+        <span
+            class="status-value value-good"
+            id="telemetry-status">
+            LIVE
+        </span>
+
+    </div>
+
+
+    <div class="status-item">
+
+        <span class="status-label">
+            CLOUD
+        </span>
+
+        <span
+            class="status-value value-good"
+            id="api-status">
+            ONLINE
+        </span>
+
+    </div>
+
+
+    <div class="status-item">
+
+        <span class="status-label">
+            GPS
+        </span>
+
+        <span
+            class="status-value value-warn"
+            id="gps-status-text">
+            NOT CONNECTED
+        </span>
+
+    </div>
+
+
+    <div class="status-item">
+
+        <span class="status-label">
+            DATA SOURCE
+        </span>
+
+        <span
+            class="status-value">
+            SENSOR NODE
+        </span>
+
+    </div>
+
+
+    <div class="status-item">
+
+        <span class="status-label">
+            UPDATE RATE
+        </span>
+
+        <span
+            class="status-value">
+            ~10 SEC
+        </span>
+
+    </div>
+
+</section>
+
+
+<!-- CHART -->
+
+<section class="chart-card glass">
+
+    <div class="chart-heading">
+
+        <div>
+
+            <div class="chart-title">
+                AIR QUALITY HISTORY
+            </div>
+
+            <div class="chart-caption">
+                Rolling live AQI telemetry
+            </div>
+
+        </div>
+
+        <div class="chart-window">
+            25 SAMPLES
+        </div>
+
+    </div>
+
+    <div class="chart-container">
+
+        <canvas
+            id="aqiChart">
+        </canvas>
+
+    </div>
+
+</section>
+
+</div>
+
+
+<!-- ALERT -->
+
+<div class="alert-strip glass">
+
+    <div class="alert-icon">
+        ◈
+    </div>
+
+    <div class="alert-text">
+
+        <div
+            class="alert-main"
+            id="alert-main">
+            SYSTEM NOMINAL
+        </div>
+
+        <div
+            class="alert-sub"
+            id="alert-sub">
+            Waiting for live environmental telemetry.
+        </div>
+
+    </div>
+
+</div>
+
+
+</div>
+</div>
+
+
+<footer class="footer">
+
+    <div>
+        <strong>AeroSense AI</strong>
+        · Edge Environmental Intelligence Platform
+    </div>
+
+    <div>
+        ESP32-S3 · ADS1115 · Render Cloud
+    </div>
+
+</footer>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   CHART
+========================================================= */
+
+const canvas =
+    document
+        .getElementById("aqiChart");
+
+const ctx =
+    canvas.getContext("2d");
+
+
+const gradient =
+    ctx.createLinearGradient(
+        0,
+        0,
+        0,
+        360
+    );
+
+
+gradient.addColorStop(
+    0,
+    "rgba(34,211,238,.24)"
+);
+
+gradient.addColorStop(
+    .45,
+    "rgba(96,165,250,.10)"
+);
+
+gradient.addColorStop(
+    1,
+    "rgba(96,165,250,0)"
+);
+
+
+const chart =
+    new Chart(
+        ctx,
+        {
+
+            type:
+                "line",
+
+            data: {
+
+                labels:
+                    Array(25).fill(""),
+
+                datasets: [
+
+                    {
 
                         label:
                             "Estimated AQI",
@@ -1422,13 +2848,13 @@
                             Array(25).fill(null),
 
                         borderColor:
-                            "#38bdf8",
+                            "#22d3ee",
 
                         backgroundColor:
                             gradient,
 
                         borderWidth:
-                            2.5,
+                            2.2,
 
                         pointRadius:
                             0,
@@ -1436,628 +2862,863 @@
                         pointHoverRadius:
                             5,
 
+                        pointHoverBackgroundColor:
+                            "#ffffff",
+
+                        pointHoverBorderColor:
+                            "#22d3ee",
+
+                        pointHoverBorderWidth:
+                            2,
+
                         tension:
-                            0.35,
+                            .38,
 
                         fill:
                             true
-                    }]
+                    }
+
+                ]
+
+            },
+
+            options: {
+
+                responsive:
+                    true,
+
+                maintainAspectRatio:
+                    false,
+
+                animation: {
+
+                    duration:
+                        500
                 },
 
+                interaction: {
 
-                options: {
-
-                    responsive:
-                        true,
-
-                    maintainAspectRatio:
+                    intersect:
                         false,
 
-                    animation: {
-                        duration:
-                            600
-                    },
+                    mode:
+                        "index"
+                },
 
-                    plugins: {
+                plugins: {
 
-                        legend: {
-                            labels: {
-                                color:
-                                    "#94a3b8"
-                            }
-                        }
-                    },
+                    legend: {
 
+                        display:
+                            false
+                    }
 
-                    scales: {
+                },
 
-                        x: {
-                            grid: {
-                                color:
-                                    "rgba(148,163,184,0.08)"
-                            },
+                scales: {
 
-                            ticks: {
-                                color:
-                                    "#64748b"
-                            }
+                    x: {
+
+                        grid: {
+
+                            color:
+                                "rgba(148,163,184,.06)"
                         },
 
-                        y: {
+                        ticks: {
 
-                            min:
-                                0,
+                            color:
+                                "#64748b",
 
-                            max:
-                                300,
+                            maxTicksLimit:
+                                6
+                        }
 
-                            grid: {
-                                color:
-                                    "rgba(148,163,184,0.08)"
-                            },
+                    },
 
-                            ticks: {
-                                color:
-                                    "#94a3b8"
+                    y: {
+
+                        min:
+                            0,
+
+                        max:
+                            300,
+
+                        grid: {
+
+                            color:
+                                "rgba(148,163,184,.07)"
+                        },
+
+                        ticks: {
+
+                            color:
+                                "#94a3b8",
+
+                            font: {
+
+                                family:
+                                    "monospace"
                             }
                         }
+
                     }
+
                 }
-            });
+
+            }
+
+        }
+    );
 
 
-        /* =================================================
-           HELPERS
-        ================================================== */
+/* =========================================================
+   HELPERS
+========================================================= */
 
-        function setValue(
-            id,
-            value,
-            decimals = 1
+function number(
+    value,
+    decimals = 1
+) {
+
+    const n =
+        Number(value);
+
+    if (
+        !Number.isFinite(n)
+    ) {
+
+        return "--";
+    }
+
+    return n.toFixed(
+        decimals
+    );
+}
+
+
+function setText(
+    id,
+    value
+) {
+
+    const el =
+        document.getElementById(
+            id
+        );
+
+    if (el) {
+
+        el.textContent =
+            value;
+    }
+}
+
+
+function aqiColor(
+    value
+) {
+
+    value =
+        Number(value);
+
+    if (value <= 50)
+        return "#34d399";
+
+    if (value <= 100)
+        return "#fbbf24";
+
+    if (value <= 200)
+        return "#fb923c";
+
+    if (value <= 300)
+        return "#fb7185";
+
+    return "#ef4444";
+}
+
+
+function aqiDescription(
+    value
+) {
+
+    value =
+        Number(value);
+
+    if (value <= 50)
+        return "Air quality is within the good range.";
+
+    if (value <= 100)
+        return "Air quality is satisfactory with limited concern.";
+
+    if (value <= 200)
+        return "Air quality is moderately elevated.";
+
+    if (value <= 300)
+        return "Air quality is poor. Sensitive groups should take care.";
+
+    if (value <= 400)
+        return "Air quality is very poor.";
+
+    return "Severe pollution conditions detected.";
+}
+
+
+function updateMeter(
+    id,
+    value,
+    limit
+) {
+
+    const bar =
+        document.getElementById(
+            "bar-" + id
+        );
+
+    const pct =
+        document.getElementById(
+            id + "-percent"
+        );
+
+    if (!bar)
+        return;
+
+
+    value =
+        Number(value);
+
+    if (
+        !Number.isFinite(value)
+    ) {
+
+        bar.style.width =
+            "0%";
+
+        return;
+    }
+
+
+    let percentage =
+        (
+            value /
+            limit
+        ) * 100;
+
+
+    percentage =
+        Math.max(
+            0,
+            Math.min(
+                percentage,
+                100
+            )
+        );
+
+
+    let color =
+        "#34d399";
+
+
+    if (percentage > 55)
+        color =
+            "#fbbf24";
+
+
+    if (percentage > 80)
+        color =
+            "#fb923c";
+
+
+    if (percentage > 95)
+        color =
+            "#fb7185";
+
+
+    bar.style.width =
+        percentage + "%";
+
+    bar.style.background =
+        color;
+
+    if (pct) {
+
+        pct.textContent =
+            Math.round(
+                percentage
+            );
+    }
+
+}
+
+
+/* =========================================================
+   SOCKET.IO
+========================================================= */
+
+const socket =
+    io();
+
+
+socket.on(
+    "connect",
+    () => {
+
+        setText(
+            "connection-text",
+            "SYSTEM ONLINE"
+        );
+
+        const dot =
+            document.getElementById(
+                "live-dot"
+            );
+
+        if (dot) {
+
+            dot.style.background =
+                "#34d399";
+        }
+
+        setText(
+            "api-status",
+            "ONLINE"
+        );
+    }
+);
+
+
+socket.on(
+    "disconnect",
+    () => {
+
+        setText(
+            "connection-text",
+            "CONNECTION LOST"
+        );
+
+        const dot =
+            document.getElementById(
+                "live-dot"
+            );
+
+        if (dot) {
+
+            dot.style.background =
+                "#fb7185";
+        }
+
+        setText(
+            "api-status",
+            "OFFLINE"
+        );
+
+        document
+            .getElementById(
+                "telemetry-status"
+            )
+            .className =
+            "status-value value-off";
+
+        setText(
+            "telemetry-status",
+            "OFFLINE"
+        );
+    }
+);
+
+
+/* =========================================================
+   LIVE DATA
+========================================================= */
+
+socket.on(
+    "live_data",
+    (data) => {
+
+        console.log(
+            "LIVE TELEMETRY",
+            data
+        );
+
+
+        /* -----------------------------------------------
+           TIME
+        ------------------------------------------------ */
+
+        const now =
+            new Date();
+
+        setText(
+            "last-sync",
+            now.toLocaleTimeString()
+        );
+
+
+        /* -----------------------------------------------
+           AQI
+        ------------------------------------------------ */
+
+        if (
+            data.final_aqi !==
+            undefined
         ) {
 
-            const el =
-                document.getElementById(id);
+            const value =
+                Number(
+                    data.final_aqi
+                );
 
-            if (!el)
-                return;
+            const color =
+                aqiColor(
+                    value
+                );
+
+
+            setText(
+                "aqi",
+                Math.round(value)
+            );
+
+
+            const gauge =
+                document.getElementById(
+                    "aqi-gauge"
+                );
+
+
+            const angle =
+                Math.min(
+                    360,
+                    Math.max(
+                        0,
+                        value / 300 * 360
+                    )
+                );
+
+
+            gauge.style
+                .setProperty(
+                    "--gauge-angle",
+                    angle + "deg"
+                );
+
+
+            gauge.style
+                .setProperty(
+                    "--gauge-color",
+                    color
+                );
+
+
+            gauge.style.boxShadow =
+                `0 0 60px ${color}20,
+                 inset 0 0 45px rgba(255,255,255,.025)`;
+
+
+            const aqiNumber =
+                document.getElementById(
+                    "aqi"
+                );
+
+            aqiNumber.style.color =
+                color;
+
+            aqiNumber.style.textShadow =
+                `0 0 28px ${color}55`;
+
+
+            setText(
+                "aqi-description",
+                aqiDescription(value)
+            );
+
+        }
+
+
+        /* -----------------------------------------------
+           CATEGORY
+        ------------------------------------------------ */
+
+        if (
+            data.category !==
+            undefined
+        ) {
+
+            const category =
+                document.getElementById(
+                    "category"
+                );
+
+            category.textContent =
+                data.category;
+
+            category.style.color =
+                aqiColor(
+                    Number(
+                        data.final_aqi
+                    )
+                );
+        }
+
+
+        /* -----------------------------------------------
+           DOMINANT
+        ------------------------------------------------ */
+
+        if (
+            data.dominant !==
+            undefined
+        ) {
+
+            setText(
+                "dominant",
+                data.dominant
+            );
+        }
+
+
+        /* -----------------------------------------------
+           TEMP
+        ------------------------------------------------ */
+
+        if (
+            data.temp !==
+            undefined
+        ) {
+
+            setText(
+                "temp",
+                number(
+                    data.temp,
+                    1
+                )
+            );
+        }
+
+
+        /* -----------------------------------------------
+           HUMIDITY
+        ------------------------------------------------ */
+
+        if (
+            data.hum !==
+            undefined
+        ) {
+
+            setText(
+                "hum",
+                number(
+                    data.hum,
+                    1
+                )
+            );
+        }
+
+
+        /* -----------------------------------------------
+           PM2.5
+        ------------------------------------------------ */
+
+        if (
+            data.pm25 !==
+            undefined
+        ) {
+
+            const value =
+                Number(
+                    data.pm25
+                );
+
+            setText(
+                "pm25",
+                number(value,1)
+            );
+
+            updateMeter(
+                "pm25",
+                value,
+                90
+            );
+        }
+
+
+        /* -----------------------------------------------
+           PM10
+        ------------------------------------------------ */
+
+        if (
+            data.pm10 !==
+            undefined
+        ) {
+
+            const value =
+                Number(
+                    data.pm10
+                );
+
+            setText(
+                "pm10",
+                number(value,1)
+            );
+
+            updateMeter(
+                "pm10",
+                value,
+                250
+            );
+        }
+
+
+        /* -----------------------------------------------
+           CO
+        ------------------------------------------------ */
+
+        if (
+            data.co !==
+            undefined
+        ) {
+
+            const value =
+                Number(
+                    data.co
+                );
+
+            setText(
+                "co",
+                number(value,2)
+            );
+
+            updateMeter(
+                "co",
+                value,
+                10
+            );
+        }
+
+
+        /* -----------------------------------------------
+           CH4
+        ------------------------------------------------ */
+
+        if (
+            data.ch4 !==
+            undefined
+        ) {
+
+            const value =
+                Number(
+                    data.ch4
+                );
+
+            setText(
+                "ch4",
+                number(value,0)
+            );
+
+            updateMeter(
+                "ch4",
+                value,
+                700
+            );
+        }
+
+
+        /* -----------------------------------------------
+           NH3
+        ------------------------------------------------ */
+
+        if (
+            data.nh3 !==
+            undefined
+        ) {
+
+            const value =
+                Number(
+                    data.nh3
+                );
+
+            setText(
+                "nh3",
+                number(value,2)
+            );
+
+            updateMeter(
+                "nh3",
+                value,
+                20
+            );
+        }
+
+
+        /* -----------------------------------------------
+           O3
+        ------------------------------------------------ */
+
+        if (
+            data.o3 !==
+            undefined
+        ) {
+
+            const value =
+                Number(
+                    data.o3
+                );
+
+            setText(
+                "o3",
+                number(value,0)
+            );
+
+            updateMeter(
+                "o3",
+                value,
+                168
+            );
+        }
+
+
+        /* -----------------------------------------------
+           GPS
+        ------------------------------------------------ */
+
+        if (
+            data.gps_fix !==
+            undefined
+        ) {
 
             if (
-                typeof value === "number" &&
-                Number.isFinite(value)
+                data.gps_fix === true
             ) {
 
-                el.innerText =
-                    value.toFixed(decimals);
+                setText(
+                    "gps-status",
+                    "FIXED"
+                );
+
+                setText(
+                    "gps-status-text",
+                    "GPS FIX"
+                );
+
+                const gpsHealth =
+                    document.getElementById(
+                        "gps-health"
+                    );
+
+                gpsHealth.className =
+                    "health-state";
+
+                gpsHealth.innerHTML =
+                    `
+                    <span class="health-dot"></span>
+                    GPS FIX
+                    `;
 
             } else {
 
-                el.innerText =
-                    value ?? "--";
+                setText(
+                    "gps-status",
+                    "WAITING"
+                );
             }
         }
 
 
-        function getAQIColor(aqi) {
+        /* -----------------------------------------------
+           SYSTEM
+        ------------------------------------------------ */
 
-            if (aqi <= 50)
-                return "#34d399";
+        const telemetry =
+            document.getElementById(
+                "telemetry-status"
+            );
 
-            if (aqi <= 100)
-                return "#fbbf24";
+        telemetry.className =
+            "status-value value-good";
 
-            if (aqi <= 200)
-                return "#fb923c";
+        telemetry.textContent =
+            "LIVE";
 
-            if (aqi <= 300)
-                return "#fb7185";
 
-            return "#ef4444";
+        /* -----------------------------------------------
+           ALERT
+        ------------------------------------------------ */
+
+        const aqi =
+            Number(
+                data.final_aqi || 0
+            );
+
+        if (aqi <= 50) {
+
+            setText(
+                "alert-main",
+                "SYSTEM NOMINAL"
+            );
+
+            setText(
+                "alert-sub",
+                "Environmental conditions are currently within the good range."
+            );
+
+        } else if (aqi <= 100) {
+
+            setText(
+                "alert-main",
+                "ELEVATED CONDITIONS"
+            );
+
+            setText(
+                "alert-sub",
+                "Air quality is satisfactory but environmental signals are elevated."
+            );
+
+        } else {
+
+            setText(
+                "alert-main",
+                "AIR QUALITY WARNING"
+            );
+
+            setText(
+                "alert-sub",
+                "The current sensor-derived AQI exceeds the normal operating range."
+            );
         }
 
 
-        function updateMeter(
-            id,
-            value,
-            maxValue
+        /* -----------------------------------------------
+           CHART
+        ------------------------------------------------ */
+
+        if (
+            data.final_aqi !==
+            undefined
         ) {
 
-            const bar =
-                document.getElementById(
-                    "bar-" + id
-                );
+            const values =
+                chart
+                    .data
+                    .datasets[0]
+                    .data;
 
-            const card =
-                document.getElementById(
-                    "card-" + id
-                );
+            values.push(
+                Number(
+                    data.final_aqi
+                )
+            );
 
-            if (!bar || !card)
-                return;
+            values.shift();
 
-
-            if (
-                typeof value !== "number" ||
-                !Number.isFinite(value)
-            ) {
-
-                bar.style.width =
-                    "0%";
-
-                return;
-            }
-
-
-            let pct =
-                (value / maxValue) * 100;
-
-
-            pct =
-                Math.max(
-                    0,
-                    Math.min(
-                        100,
-                        pct
-                    )
-                );
-
-
-            let color =
-                "#34d399";
-
-
-            if (pct > 55)
-                color =
-                    "#fbbf24";
-
-
-            if (pct > 80)
-                color =
-                    "#fb7185";
-
-
-            if (pct > 95)
-                color =
-                    "#ef4444";
-
-
-            bar.style.width =
-                pct + "%";
-
-            bar.style.background =
-                color;
-
-
-            card.style.borderColor =
-                `${color}55`;
+            chart.update(
+                "none"
+            );
         }
 
+    }
+);
 
-        /* =================================================
-           SOCKET.IO
-        ================================================== */
-
-        const socket =
-            io();
-
-
-        socket.on(
-            "connect",
-            () => {
-
-                const dot =
-                    document.querySelector(
-                        ".live-dot"
-                    );
-
-                if (dot) {
-
-                    dot.style.background =
-                        "#34d399";
-                }
-            }
-        );
-
-
-        socket.on(
-            "disconnect",
-            () => {
-
-                const dot =
-                    document.querySelector(
-                        ".live-dot"
-                    );
-
-                if (dot) {
-
-                    dot.style.background =
-                        "#fb7185";
-                }
-            }
-        );
-
-
-        /* =================================================
-           LIVE DATA
-        ================================================== */
-
-        socket.on(
-            "live_data",
-            (data) => {
-
-                console.log(
-                    "LIVE DATA:",
-                    data
-                );
-
-
-                /* -------------------------------
-                   TIME
-                -------------------------------- */
-
-                const now =
-                    new Date();
-
-
-                document
-                    .getElementById(
-                        "last-sync"
-                    )
-                    .innerText =
-                    now
-                        .toLocaleTimeString();
-
-
-                /* -------------------------------
-                   AQI
-                -------------------------------- */
-
-                if (
-                    data.final_aqi !==
-                    undefined
-                ) {
-
-                    const aqi =
-                        Number(
-                            data.final_aqi
-                        );
-
-
-                    const color =
-                        getAQIColor(
-                            aqi
-                        );
-
-
-                    const aqiEl =
-                        document
-                            .getElementById(
-                                "aqi"
-                            );
-
-
-                    const circle =
-                        document
-                            .getElementById(
-                                "aqi-circle"
-                            );
-
-
-                    aqiEl.innerText =
-                        Math.round(
-                            aqi
-                        );
-
-
-                    aqiEl.style.color =
-                        color;
-
-
-                    aqiEl.style.textShadow =
-                        `0 0 28px ${color}55`;
-
-
-                    circle.style.boxShadow =
-                        `0 0 55px ${color}22,
-                         inset 0 0 35px rgba(255,255,255,0.03)`;
-                }
-
-
-                /* -------------------------------
-                   CATEGORY
-                -------------------------------- */
-
-                if (
-                    data.category !==
-                    undefined
-                ) {
-
-                    const category =
-                        document
-                            .getElementById(
-                                "category"
-                            );
-
-
-                    category.innerText =
-                        data.category;
-
-
-                    category.style.color =
-                        getAQIColor(
-                            Number(
-                                data.final_aqi
-                            )
-                        );
-                }
-
-
-                /* -------------------------------
-                   DOMINANT
-                -------------------------------- */
-
-                if (
-                    data.dominant !==
-                    undefined
-                ) {
-
-                    setValue(
-                        "dominant",
-                        data.dominant,
-                        0
-                    );
-                }
-
-
-                /* -------------------------------
-                   ENVIRONMENT
-                -------------------------------- */
-
-                if (
-                    data.temp !==
-                    undefined
-                ) {
-
-                    setValue(
-                        "temp",
-                        Number(
-                            data.temp
-                        ),
-                        1
-                    );
-                }
-
-
-                if (
-                    data.hum !==
-                    undefined
-                ) {
-
-                    setValue(
-                        "hum",
-                        Number(
-                            data.hum
-                        ),
-                        1
-                    );
-                }
-
-
-                /* -------------------------------
-                   PM2.5
-                -------------------------------- */
-
-                if (
-                    data.pm25 !==
-                    undefined
-                ) {
-
-                    const value =
-                        Number(
-                            data.pm25
-                        );
-
-
-                    setValue(
-                        "pm25",
-                        value,
-                        1
-                    );
-
-
-                    updateMeter(
-                        "pm25",
-                        value,
-                        90
-                    );
-                }
-
-
-                /* -------------------------------
-                   PM10
-                -------------------------------- */
-
-                if (
-                    data.pm10 !==
-                    undefined
-                ) {
-
-                    const value =
-                        Number(
-                            data.pm10
-                        );
-
-
-                    setValue(
-                        "pm10",
-                        value,
-                        1
-                    );
-
-
-                    updateMeter(
-                        "pm10",
-                        value,
-                        250
-                    );
-                }
-
-
-                /* -------------------------------
-                   CO
-                -------------------------------- */
-
-                if (
-                    data.co !==
-                    undefined
-                ) {
-
-                    const value =
-                        Number(
-                            data.co
-                        );
-
-
-                    setValue(
-                        "co",
-                        value,
-                        2
-                    );
-
-
-                    updateMeter(
-                        "co",
-                        value,
-                        10
-                    );
-                }
-
-
-                /* -------------------------------
-                   CH4
-                -------------------------------- */
-
-                if (
-                    data.ch4 !==
-                    undefined
-                ) {
-
-                    const value =
-                        Number(
-                            data.ch4
-                        );
-
-
-                    setValue(
-                        "ch4",
-                        value,
-                        0
-                    );
-
-
-                    updateMeter(
-                        "ch4",
-                        value,
-                        700
-                    );
-                }
-
-
-                /* -------------------------------
-                   NH3
-                -------------------------------- */
-
-                if (
-                    data.nh3 !==
-                    undefined
-                ) {
-
-                    const value =
-                        Number(
-                            data.nh3
-                        );
-
-
-                    setValue(
-                        "nh3",
-                        value,
-                        2
-                    );
-
-
-                    updateMeter(
-                        "nh3",
-                        value,
-                        20
-                    );
-                }
-
-
-                /* -------------------------------
-                   O3
-                -------------------------------- */
-
-                if (
-                    data.o3 !==
-                    undefined
-                ) {
-
-                    const value =
-                        Number(
-                            data.o3
-                        );
-
-
-                    setValue(
-                        "o3",
-                        value,
-                        0
-                    );
-
-
-                    updateMeter(
-                        "o3",
-                        value,
-                        168
-                    );
-                }
-
-
-                /* -------------------------------
-                   CHART
-                -------------------------------- */
-
-                if (
-                    data.final_aqi !==
-                    undefined
-                ) {
-
-                    const chartData =
-                        aqiChart
-                            .data
-                            .datasets[0]
-                            .data;
-
-
-                    chartData.push(
-                        Number(
-                            data.final_aqi
-                        )
-                    );
-
-
-                    chartData.shift();
-
-
-                    aqiChart.update(
-                        "none"
-                    );
-                }
-
-            }
-        );
-
-    </script>
+</script>
 
 </body>
 </html>
