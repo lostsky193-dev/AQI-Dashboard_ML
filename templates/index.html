@@ -3,75 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live AQI Monitor</title>
+    <title>Advanced AI AQI Dashboard</title>
+    <!-- Socket.IO & Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
-        body {
-            background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
-            display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px;
+        /* Fluid Animated Ambient Background */
+        @keyframes ambientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
-        .header { margin-bottom: 30px; text-align: center; }
-        .header h1 { margin: 0; font-size: 2.3rem; letter-spacing: 2px; }
-        .live-indicator { color: #10b981; font-weight: bold; animation: pulse 2s infinite; }
         
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; width: 100%; max-width: 1200px; }
-        .card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; text-align: center; transition: transform 0.2s; }
-        .card:hover { transform: translateY(-5px); border-color: rgba(56, 189, 248, 0.4); }
-        .card h3 { margin: 0 0 10px 0; color: #94a3b8; font-size: 0.9rem; text-transform: uppercase; }
-        .value { font-size: 2.2rem; font-weight: bold; color: #38bdf8; transition: color 0.3s, text-shadow 0.3s; }
-        .value-text { font-size: 1.5rem; font-weight: bold; color: #f59e0b; }
+        body {
+            margin: 0; padding: 20px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: #ffffff;
+            background: linear-gradient(-45deg, #09090e, #1a1025, #0f172a, #050a15);
+            background-size: 400% 400%;
+            animation: ambientBG 15s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Glassmorphism Header */
+        .header {
+            width: 100%; max-width: 1200px;
+            text-align: center; margin-bottom: 30px;
+            padding: 20px; border-radius: 20px;
+            background: rgba(20, 20, 30, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+        .header h1 { margin: 0; font-size: 2.5rem; letter-spacing: 3px; text-transform: uppercase; background: -webkit-linear-gradient(#00f2fe, #4facfe); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
+        .live-pulse { color: #f00; font-weight: 800; letter-spacing: 2px; animation: heartbeat 1.5s infinite; }
         
-        .value.updated { color: #10b981; text-shadow: 0 0 15px #10b981; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        @keyframes heartbeat {
+            0% { text-shadow: 0 0 5px #f00; transform: scale(1); }
+            50% { text-shadow: 0 0 20px #f00, 0 0 30px #f00; transform: scale(1.05); }
+            100% { text-shadow: 0 0 5px #f00; transform: scale(1); }
+        }
+
+        /* Responsive Glass Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px; width: 100%; max-width: 1200px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(15, 15, 25, 0.5);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px; padding: 25px 20px;
+            text-align: center;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative; overflow: hidden;
+        }
+        
+        .card::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 60%);
+            opacity: 0; transition: opacity 0.5s;
+        }
+        .card:hover::before { opacity: 1; }
+        .card:hover { transform: translateY(-5px); border-color: rgba(79, 172, 254, 0.3); box-shadow: 0 10px 40px rgba(79, 172, 254, 0.2); }
+
+        .card h3 { margin: 0 0 10px 0; color: #64748b; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; }
+        .value { font-size: 2.5rem; font-weight: 900; color: #e2e8f0; text-shadow: 0 0 10px rgba(255,255,255,0.1); transition: color 0.3s ease; }
+        
+        /* Highlight specific cards */
+        .highlight-text { color: #a855f7; text-shadow: 0 0 15px rgba(168, 85, 247, 0.5); }
+        .update-flash { color: #00f2fe !important; text-shadow: 0 0 20px #00f2fe !important; }
+
+        /* Chart Container */
+        .chart-container {
+            width: 100%; max-width: 1200px;
+            background: rgba(15, 15, 25, 0.5);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px; padding: 20px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>Advanced AQI Dashboard</h1>
-        <p class="live-indicator">● LIVE SENSOR TELEMETRY</p>
+        <h1>AQI Telemetry Matrix</h1>
+        <p class="live-pulse">● LIVE STREAM ACTIVE</p>
     </div>
 
     <div class="grid">
-        <div class="card"><h3>Final AQI</h3><div id="aqi" class="value">--</div></div>
-        <div class="card"><h3>Category</h3><div id="category" class="value value-text">--</div></div>
-        <div class="card"><h3>Dominant</h3><div id="dominant" class="value value-text">--</div></div>
-        <div class="card"><h3>Temperature</h3><div id="temp" class="value">-- °C</div></div>
-        <div class="card"><h3>Humidity</h3><div id="hum" class="value">-- %</div></div>
-        <div class="card"><h3>CO (MQ7)</h3><div id="co" class="value">-- mg/m³</div></div>
-        <div class="card"><h3>CH4 (MQ9)</h3><div id="ch4" class="value">-- ppm</div></div>
-        <div class="card"><h3>SO2 (MQ135)</h3><div id="so2" class="value">-- µg/m³</div></div>
-        <div class="card"><h3>NO2 (MQ131)</h3><div id="no2" class="value">-- µg/m³</div></div>
-        <div class="card"><h3>O3 (MQ131)</h3><div id="o3" class="value">-- µg/m³</div></div>
-        <div class="card"><h3>PM 10</h3><div id="pm10" class="value">-- µg/m³</div></div>
-        <div class="card"><h3>PM 2.5 (GP2Y)</h3><div id="pm25" class="value">-- µg/m³</div></div>
+        <div class="card" style="border-bottom: 3px solid #a855f7;">
+            <h3>Final AQI</h3><div id="aqi" class="value highlight-text">--</div>
+        </div>
+        <div class="card"><h3>Category</h3><div id="category" class="value" style="font-size: 1.8rem;">--</div></div>
+        <div class="card"><h3>Dominant</h3><div id="dominant" class="value" style="font-size: 1.8rem;">--</div></div>
+        <div class="card"><h3>Temp / Hum</h3><div id="temphum" class="value" style="font-size: 1.8rem;">--</div></div>
+        
+        <div class="card"><h3>Carbon Monoxide</h3><div id="co" class="value">--</div><h3 style="margin-top:5px;">PPM</h3></div>
+        <div class="card"><h3>Combustible (CH4)</h3><div id="ch4" class="value">--</div><h3 style="margin-top:5px;">PPM</h3></div>
+        <div class="card"><h3>Ammonia (NH3)</h3><div id="so2" class="value">--</div><h3 style="margin-top:5px;">PPM</h3></div>
+        <div class="card"><h3>Ozone (O3)</h3><div id="o3" class="value">--</div><h3 style="margin-top:5px;">PPB</h3></div>
+        
+        <div class="card"><h3>PM 10</h3><div id="pm10" class="value">--</div><h3 style="margin-top:5px;">µg/m³</h3></div>
+        <div class="card"><h3>PM 2.5</h3><div id="pm25" class="value">--</div><h3 style="margin-top:5px;">µg/m³</h3></div>
+    </div>
+
+    <!-- Live Fluid Chart -->
+    <div class="chart-container">
+        <canvas id="aqiChart" height="80"></canvas>
     </div>
 
     <script>
+        // 1. Initialize Chart.js
+        const ctx = document.getElementById('aqiChart').getContext('2d');
+        
+        // Create a neon gradient for the line
+        let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(168, 85, 247, 0.8)');   
+        gradient.addColorStop(1, 'rgba(168, 85, 247, 0.0)');
+
+        const aqiChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array(20).fill(''), // Keep last 20 data points
+                datasets: [{
+                    label: 'Live Final AQI Trend',
+                    data: Array(20).fill(null),
+                    borderColor: '#a855f7',
+                    backgroundColor: gradient,
+                    borderWidth: 3,
+                    pointRadius: 0, // Hide dots for fluid look
+                    tension: 0.4, // Smooth curved lines
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                animation: { duration: 500, easing: 'easeOutQuart' },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { 
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#64748b' },
+                        suggestedMin: 0, suggestedMax: 150
+                    }
+                },
+                plugins: {
+                    legend: { labels: { color: '#e2e8f0', font: { size: 14 } } }
+                }
+            }
+        });
+
+        // 2. Setup Socket.IO
         const socket = io();
-        function updateValue(id, val, unit) {
+
+        function updateCard(id, val) {
             const el = document.getElementById(id);
             if (!el) return;
-            // Round numbers to 2 decimals if they are numbers
-            if (typeof val === 'number') val = val.toFixed(2);
-            el.innerText = val + (unit ? ' ' + unit : '');
-            el.classList.add('updated');
-            setTimeout(() => el.classList.remove('updated'), 400);
+            if (typeof val === 'number') val = val.toFixed(1);
+            el.innerText = val;
+            
+            // Trigger neon flash animation
+            el.classList.remove('update-flash');
+            void el.offsetWidth; // Trigger DOM reflow
+            el.classList.add('update-flash');
+            setTimeout(() => el.classList.remove('update-flash'), 600);
         }
 
         socket.on('live_data', function(data) {
-            if (data.final_aqi !== undefined) updateValue('aqi', data.final_aqi, '');
-            if (data.category !== undefined) updateValue('category', data.category, '');
-            if (data.dominant !== undefined) updateValue('dominant', data.dominant, '');
-            if (data.temp !== undefined) updateValue('temp', data.temp, '°C');
-            if (data.hum !== undefined) updateValue('hum', data.hum, '%');
-            if (data.co !== undefined) updateValue('co', data.co, 'mg/m³');
-            if (data.ch4 !== undefined) updateValue('ch4', data.ch4, 'ppm');
-            if (data.so2 !== undefined) updateValue('so2', data.so2, 'µg/m³');
-            if (data.no2 !== undefined) updateValue('no2', data.no2, 'µg/m³');
-            if (data.o3 !== undefined) updateValue('o3', data.o3, 'µg/m³');
-            if (data.pm10 !== undefined) updateValue('pm10', data.pm10, 'µg/m³');
-            if (data.pm25 !== undefined) updateValue('pm25', data.pm25, 'µg/m³');
+            // Update Top Cards
+            if (data.final_aqi !== undefined) updateCard('aqi', data.final_aqi);
+            if (data.category !== undefined) updateCard('category', data.category);
+            if (data.dominant !== undefined) updateCard('dominant', data.dominant);
+            if (data.temp !== undefined && data.hum !== undefined) updateCard('temphum', `${data.temp.toFixed(1)}°C / ${data.hum.toFixed(0)}%`);
+            
+            // Update Gas & Dust Cards
+            if (data.co !== undefined) updateCard('co', data.co);
+            if (data.ch4 !== undefined) updateCard('ch4', data.ch4);
+            if (data.so2 !== undefined) updateCard('so2', data.so2);
+            if (data.o3 !== undefined) updateCard('o3', data.o3);
+            if (data.pm10 !== undefined) updateCard('pm10', data.pm10);
+            if (data.pm25 !== undefined) updateCard('pm25', data.pm25);
+
+            // Update Fluid Chart
+            if (data.final_aqi !== undefined) {
+                const chartData = aqiChart.data.datasets[0].data;
+                chartData.push(data.final_aqi);
+                chartData.shift(); // Remove oldest data point to keep it scrolling
+                aqiChart.update();
+            }
         });
     </script>
 </body>
