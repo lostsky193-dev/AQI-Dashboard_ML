@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO
 from flask_cors import CORS
@@ -15,7 +18,8 @@ CORS(app)
 
 socketio = SocketIO(
     app,
-    cors_allowed_origins="*"
+    cors_allowed_origins="*",
+    async_mode="eventlet"
 )
 
 # =====================================================
@@ -32,27 +36,22 @@ model = joblib.load(MODEL_PATH)
 
 print("AeroSense ML model loaded successfully.")
 
+
 # =====================================================
 # AQI CATEGORY
 # =====================================================
 
 def get_aqi_category(aqi):
-
     if aqi <= 50:
         return "Good"
-
     elif aqi <= 100:
         return "Satisfactory"
-
     elif aqi <= 200:
         return "Moderate"
-
     elif aqi <= 300:
         return "Poor"
-
     elif aqi <= 400:
         return "Very Poor"
-
     else:
         return "Severe"
 
@@ -62,49 +61,37 @@ def get_aqi_category(aqi):
 # =====================================================
 
 def get_advice(aqi):
-
     if aqi <= 50:
-
         return [
             "Air quality is good.",
             "Normal outdoor activities are safe.",
             "No special precautions are required."
         ]
-
     elif aqi <= 100:
-
         return [
             "Air quality is satisfactory.",
             "Most people can continue normal outdoor activities.",
             "Sensitive individuals should monitor their exposure."
         ]
-
     elif aqi <= 200:
-
         return [
             "Reduce prolonged outdoor exposure.",
             "Sensitive individuals should take extra care.",
             "Consider limiting strenuous outdoor activity."
         ]
-
     elif aqi <= 300:
-
         return [
             "Avoid prolonged outdoor activity.",
             "Sensitive individuals should remain indoors when possible.",
             "Use a suitable mask during necessary outdoor travel."
         ]
-
     elif aqi <= 400:
-
         return [
             "Avoid outdoor activity as much as possible.",
             "Keep windows and doors closed during high-pollution periods.",
             "Sensitive individuals should remain indoors."
         ]
-
     else:
-
         return [
             "Avoid outdoor activity.",
             "Remain indoors and keep exposure to polluted air minimal.",
@@ -118,7 +105,6 @@ def get_advice(aqi):
 
 @app.route("/")
 def index():
-
     return render_template("index.html")
 
 
@@ -128,9 +114,7 @@ def index():
 
 @app.route("/api/upload", methods=["POST"])
 def upload_data():
-
     try:
-
         # -------------------------------------------------
         # GET JSON DATA
         # -------------------------------------------------
@@ -138,7 +122,6 @@ def upload_data():
         data = request.get_json(silent=True)
 
         if not data:
-
             return jsonify({
                 "status": "error",
                 "message": "No JSON data received"
@@ -153,8 +136,9 @@ def upload_data():
 
         pm25 = float(data.get("pm25", 0))
         pm10 = float(data.get("pm10", 0))
-        humidity = float(data.get("rel_humidity", 0))
-        temperature = float(data.get("temperature", 0))
+        # ESP32 sends "temp" / "hum", not "temperature" / "rel_humidity"
+        humidity = float(data.get("hum", 0))
+        temperature = float(data.get("temp", 0))
 
         # -------------------------------------------------
         # ML INPUT
@@ -172,7 +156,6 @@ def upload_data():
         # -------------------------------------------------
 
         predicted_aqi = model.predict(input_data)[0]
-
         predicted_aqi = round(float(predicted_aqi))
 
         # -------------------------------------------------
@@ -201,7 +184,6 @@ def upload_data():
 
         data["final_aqi"] = predicted_aqi
         data["category"] = category
-
         data["temp"] = temperature
         data["hum"] = humidity
 
@@ -215,10 +197,7 @@ def upload_data():
         # BROADCAST TO DASHBOARD
         # -------------------------------------------------
 
-        socketio.emit(
-            "live_data",
-            data
-        )
+        socketio.emit("live_data", data)
 
         # -------------------------------------------------
         # PRINT RESULT
@@ -229,15 +208,12 @@ def upload_data():
         print("Advice:", advice)
 
         if "gps_fix" in data:
-
             print("GPS Fix:", data.get("gps_fix"))
 
         if "latitude" in data:
-
             print("Latitude:", data.get("latitude"))
 
         if "longitude" in data:
-
             print("Longitude:", data.get("longitude"))
 
         # -------------------------------------------------
@@ -245,29 +221,14 @@ def upload_data():
         # -------------------------------------------------
 
         return jsonify({
-
             "status": "success",
-
-            "message":
-                "Data received and ML prediction generated",
-
-            "ml_prediction":
-                predicted_aqi,
-
-            "ml_category":
-                category,
-
-            "final_aqi":
-                predicted_aqi,
-
-            "category":
-                category,
-
-            "advice":
-                advice,
-
-            "data":
-                data
+            "message": "Data received and ML prediction generated",
+            "ml_prediction": predicted_aqi,
+            "ml_category": category,
+            "final_aqi": predicted_aqi,
+            "category": category,
+            "advice": advice,
+            "data": data
         })
 
     # =====================================================
@@ -275,15 +236,10 @@ def upload_data():
     # =====================================================
 
     except Exception as e:
-
         print("ERROR:", e)
-
         return jsonify({
-
             "status": "error",
-
             "message": str(e)
-
         }), 400
 
 
@@ -292,16 +248,9 @@ def upload_data():
 # =====================================================
 
 if __name__ == "__main__":
-
     socketio.run(
-
         app,
-
         host="0.0.0.0",
-
-        port=int(
-            os.environ.get("PORT", 5000)
-        ),
-
+        port=int(os.environ.get("PORT", 5000)),
         debug=False
     )
