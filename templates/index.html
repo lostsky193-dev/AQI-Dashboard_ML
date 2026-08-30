@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -6,7 +7,9 @@
 <title>AeroSense AI | Environmental Intelligence</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -634,8 +637,6 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-
-    flex-shrink: 0;
 }
 
 .section-kicker {
@@ -2005,6 +2006,7 @@ body {
 }
 
 </style>
+
 </head>
 
 <body>
@@ -2027,79 +2029,80 @@ body {
 
 <header class="header glass">
 
-    <div class="brand">
+```
+<div class="brand">
 
-        <div class="brand-icon">
-            ◉
+    <div class="brand-icon">
+        ◉
+    </div>
+
+    <div>
+
+        <div class="brand-name">
+            AEROSENSE AI
         </div>
 
-        <div>
-
-            <div class="brand-name">
-                AEROSENSE AI
-            </div>
-
-            <div class="brand-sub">
-                INTELLIGENT AIR QUALITY MONITORING PLATFORM
-            </div>
-
+        <div class="brand-sub">
+            INTELLIGENT AIR QUALITY MONITORING PLATFORM
         </div>
 
     </div>
 
-    <div class="header-mid">
+</div>
 
-        <div class="command-chip">
-            DEVICE:
-            <strong>AQI-001</strong>
-        </div>
+<div class="header-mid">
 
-        <div class="command-chip">
-            NODE:
-            <strong>ESP32-S3</strong>
-        </div>
+    <div class="command-chip">
+        DEVICE:
+        <strong>AQI-001</strong>
+    </div>
 
-        <div class="command-chip cloud-ok">
-            CLOUD:
-            <strong>RENDER</strong>
-        </div>
+    <div class="command-chip">
+        NODE:
+        <strong>ESP32-S3</strong>
+    </div>
 
-        <div class="command-chip gps-wait">
-            GPS:
-            <strong id="gps-status">
-                WAITING
-            </strong>
-        </div>
+    <div class="command-chip cloud-ok">
+        CLOUD:
+        <strong>RENDER</strong>
+    </div>
+
+    <div class="command-chip gps-wait">
+        GPS:
+        <strong id="gps-status">
+            WAITING
+        </strong>
+    </div>
+
+</div>
+
+<div class="header-right">
+
+    <div class="status-pill">
+
+        <span
+            class="live-dot"
+            id="live-dot"
+        ></span>
+
+        <span id="connection-text">
+            SYSTEM ONLINE
+        </span>
 
     </div>
 
-    <div class="header-right">
+    <div class="sync">
 
-        <div class="status-pill">
-
-            <span
-                class="live-dot"
-                id="live-dot"
-            ></span>
-
-            <span id="connection-text">
-                SYSTEM ONLINE
-            </span>
-
-        </div>
-
-        <div class="sync">
-
-            <span id="last-sync">
-                WAITING...
-            </span>
-
-        </div>
+        <span id="last-sync">
+            WAITING...
+        </span>
 
     </div>
+
+</div>
+```
 
 </header>
-
 
 <!-- =====================================================
      MAIN
@@ -2107,240 +2110,240 @@ body {
 
 <div class="main-grid">
 
-
 <!-- =====================================================
      LEFT RAIL
 ===================================================== -->
 
 <div class="rail">
 
-    <!-- PRESENT AQI -->
+```
+<!-- PRESENT AQI -->
 
-    <section class="aqi-card glass glass-tilt">
+<section class="aqi-card glass glass-tilt">
 
-        <div class="card-top">
+    <div class="card-top">
 
-            <div>
+        <div>
 
-                <div class="section-kicker">
-                    Air Quality Intelligence
-                </div>
-
-                <div class="section-title">
-                    Current Environmental Status
-                </div>
-
+            <div class="section-kicker">
+                Air Quality Intelligence
             </div>
 
-            <div class="device-id">
-                AQI-001
+            <div class="section-title">
+                Current Environmental Status
             </div>
 
         </div>
 
+        <div class="device-id">
+            AQI-001
+        </div>
 
-        <div class="gauge-zone">
+    </div>
+
+
+    <div class="gauge-zone">
+
+        <div
+            class="gauge"
+            id="aqi-gauge"
+        >
+
+            <div class="gauge-ring-dash"></div>
+
+            <div class="gauge-content">
+
+                <div
+                    class="aqi-number"
+                    id="aqi"
+                >
+                    --
+                </div>
+
+                <div class="aqi-caption">
+                    PRESENT AQI • SENSOR + ML
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div
+        class="aqi-status"
+        id="category"
+    >
+        STANDBY
+    </div>
+
+    <div
+        class="aqi-description"
+        id="aqi-description"
+    >
+        Awaiting environmental telemetry
+    </div>
+
+
+    <div class="dominant-box">
+
+        <div>
+
+            <div class="dominant-label">
+                Dominant Signal
+            </div>
 
             <div
-                class="gauge"
-                id="aqi-gauge"
+                class="dominant-value"
+                id="dominant"
             >
+                --
+            </div>
 
-                <div class="gauge-ring-dash"></div>
+        </div>
 
-                <div class="gauge-content">
+    </div>
 
-                    <div
-                        class="aqi-number"
-                        id="aqi"
-                    >
-                        --
-                    </div>
 
-                    <div class="aqi-caption">
-                        PRESENT AQI • SENSOR + ML
-                    </div>
+    <div class="env-grid">
 
-                </div>
+        <div class="env-card">
 
+            <div class="env-label">
+                Temperature
+            </div>
+
+            <div
+                class="env-value"
+                id="temp"
+            >
+                --
+            </div>
+
+            <div class="env-label">
+                °C
             </div>
 
         </div>
 
 
-        <div
-            class="aqi-status"
-            id="category"
+        <div class="env-card">
+
+            <div class="env-label">
+                Humidity
+            </div>
+
+            <div
+                class="env-value"
+                id="hum"
+            >
+                --
+            </div>
+
+            <div class="env-label">
+                % RH
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- SYSTEM HEALTH -->
+
+<section class="health-card glass glass-tilt">
+
+    <div class="health-title">
+        SYSTEM HEALTH
+    </div>
+
+
+    <div class="health-row">
+
+        <span>
+            ESP32-S3
+        </span>
+
+        <span class="health-state">
+
+            <span class="health-dot"></span>
+
+            ONLINE
+
+        </span>
+
+    </div>
+
+
+    <div class="health-row">
+
+        <span>
+            SENSOR NETWORK
+        </span>
+
+        <span
+            class="health-state"
+            id="sensor-health"
         >
-            STANDBY
-        </div>
 
-        <div
-            class="aqi-description"
-            id="aqi-description"
+            <span class="health-dot"></span>
+
+            ACTIVE
+
+        </span>
+
+    </div>
+
+
+    <div class="health-row">
+
+        <span>
+            CLOUD API
+        </span>
+
+        <span
+            class="health-state"
+            id="cloud-health"
         >
-            Awaiting environmental telemetry
-        </div>
+
+            <span class="health-dot"></span>
+
+            CONNECTED
+
+        </span>
+
+    </div>
 
 
-        <div class="dominant-box">
+    <div class="health-row">
 
-            <div>
+        <span>
+            GPS MODULE
+        </span>
 
-                <div class="dominant-label">
-                    Dominant Signal
-                </div>
-
-                <div
-                    class="dominant-value"
-                    id="dominant"
-                >
-                    --
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="env-grid">
-
-            <div class="env-card">
-
-                <div class="env-label">
-                    Temperature
-                </div>
-
-                <div
-                    class="env-value"
-                    id="temp"
-                >
-                    --
-                </div>
-
-                <div class="env-label">
-                    °C
-                </div>
-
-            </div>
-
-
-            <div class="env-card">
-
-                <div class="env-label">
-                    Humidity
-                </div>
-
-                <div
-                    class="env-value"
-                    id="hum"
-                >
-                    --
-                </div>
-
-                <div class="env-label">
-                    % RH
-                </div>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- SYSTEM HEALTH -->
-
-    <section class="health-card glass glass-tilt">
-
-        <div class="health-title">
-            SYSTEM HEALTH
-        </div>
-
-
-        <div class="health-row">
-
-            <span>
-                ESP32-S3
-            </span>
-
-            <span class="health-state">
-
-                <span class="health-dot"></span>
-
-                ONLINE
-
-            </span>
-
-        </div>
-
-
-        <div class="health-row">
-
-            <span>
-                SENSOR NETWORK
-            </span>
+        <span
+            id="gps-health"
+            class="health-state"
+        >
 
             <span
-                class="health-state"
-                id="sensor-health"
-            >
+                class="health-dot"
+                style="background:var(--yellow)"
+            ></span>
 
-                <span class="health-dot"></span>
+            WAITING
 
-                ACTIVE
+        </span>
 
-            </span>
+    </div>
 
-        </div>
-
-
-        <div class="health-row">
-
-            <span>
-                CLOUD API
-            </span>
-
-            <span
-                class="health-state"
-                id="cloud-health"
-            >
-
-                <span class="health-dot"></span>
-
-                CONNECTED
-
-            </span>
-
-        </div>
-
-
-        <div class="health-row">
-
-            <span>
-                GPS MODULE
-            </span>
-
-            <span
-                id="gps-health"
-                class="health-state"
-            >
-
-                <span
-                    class="health-dot"
-                    style="background:var(--yellow)"
-                ></span>
-
-                WAITING
-
-            </span>
-
-        </div>
-
-    </section>
+</section>
+```
 
 </div>
-
 
 <!-- =====================================================
      CENTER RAIL
@@ -2348,630 +2351,630 @@ body {
 
 <div class="rail">
 
+```
+<!-- SENSOR GRID -->
 
-    <!-- SENSOR GRID -->
-
-    <div class="sensor-grid">
+<div class="sensor-grid">
 
 
-        <!-- PM2.5 -->
+    <!-- PM2.5 -->
 
-        <article
-            class="sensor-card glass glass-tilt"
-            id="card-pm25"
-        >
+    <article
+        class="sensor-card glass glass-tilt"
+        id="card-pm25"
+    >
 
-            <div class="sensor-header">
+        <div class="sensor-header">
 
-                <div class="sensor-name">
-                    PARTICULATE MATTER PM2.5
-                </div>
+            <div class="sensor-name">
+                PARTICULATE MATTER PM2.5
+            </div>
 
-                <div class="sensor-type">
-                    GP2Y
-                </div>
+            <div class="sensor-type">
+                GP2Y
+            </div>
+
+        </div>
+
+
+        <div>
+
+            <div class="sensor-value">
+
+                <span
+                    class="sensor-number"
+                    id="pm25"
+                >
+                    --
+                </span>
+
+                <span class="sensor-unit">
+                    µg/m³
+                </span>
 
             </div>
 
 
-            <div>
+            <div class="meter-track">
 
-                <div class="sensor-value">
-
-                    <span
-                        class="sensor-number"
-                        id="pm25"
-                    >
-                        --
-                    </span>
-
-                    <span class="sensor-unit">
-                        µg/m³
-                    </span>
-
-                </div>
-
-
-                <div class="meter-track">
-
-                    <div
-                        class="meter-fill"
-                        id="bar-pm25"
-                    ></div>
-
-                </div>
-
-
-                <div class="meter-head">
-
-                    <span>
-                        EXPOSURE
-                    </span>
-
-                    <span>
-                        <span id="pm25-percent">
-                            0
-                        </span>%
-                    </span>
-
-                </div>
-
-            </div>
-
-        </article>
-
-
-        <!-- PM10 -->
-
-        <article
-            class="sensor-card glass glass-tilt"
-            id="card-pm10"
-        >
-
-            <div class="sensor-header">
-
-                <div class="sensor-name">
-                    PARTICULATE MATTER PM10
-                </div>
-
-                <div class="sensor-type">
-                    EST.
-                </div>
+                <div
+                    class="meter-fill"
+                    id="bar-pm25"
+                ></div>
 
             </div>
 
 
-            <div>
+            <div class="meter-head">
 
-                <div class="sensor-value">
+                <span>
+                    EXPOSURE
+                </span>
 
-                    <span
-                        class="sensor-number"
-                        id="pm10"
-                    >
-                        --
-                    </span>
-
-                    <span class="sensor-unit">
-                        µg/m³
-                    </span>
-
-                </div>
-
-
-                <div class="meter-track">
-
-                    <div
-                        class="meter-fill"
-                        id="bar-pm10"
-                    ></div>
-
-                </div>
-
-
-                <div class="meter-head">
-
-                    <span>
-                        EXPOSURE
-                    </span>
-
-                    <span>
-                        <span id="pm10-percent">
-                            0
-                        </span>%
-                    </span>
-
-                </div>
+                <span>
+                    <span id="pm25-percent">
+                        0
+                    </span>%
+                </span>
 
             </div>
 
-        </article>
+        </div>
+
+    </article>
 
 
-        <!-- CO -->
+    <!-- PM10 -->
 
-        <article
-            class="sensor-card glass glass-tilt"
-            id="card-co"
-        >
+    <article
+        class="sensor-card glass glass-tilt"
+        id="card-pm10"
+    >
 
-            <div class="sensor-header">
+        <div class="sensor-header">
 
-                <div class="sensor-name">
-                    CARBON MONOXIDE
-                </div>
+            <div class="sensor-name">
+                PARTICULATE MATTER PM10
+            </div>
 
-                <div class="sensor-type">
-                    MQ-7
-                </div>
+            <div class="sensor-type">
+                EST.
+            </div>
+
+        </div>
+
+
+        <div>
+
+            <div class="sensor-value">
+
+                <span
+                    class="sensor-number"
+                    id="pm10"
+                >
+                    --
+                </span>
+
+                <span class="sensor-unit">
+                    µg/m³
+                </span>
 
             </div>
 
 
-            <div>
+            <div class="meter-track">
 
-                <div class="sensor-value">
-
-                    <span
-                        class="sensor-number"
-                        id="co"
-                    >
-                        --
-                    </span>
-
-                    <span class="sensor-unit">
-                        ppm
-                    </span>
-
-                </div>
-
-
-                <div class="meter-track">
-
-                    <div
-                        class="meter-fill"
-                        id="bar-co"
-                    ></div>
-
-                </div>
-
-
-                <div class="meter-head">
-
-                    <span>
-                        LEVEL
-                    </span>
-
-                    <span>
-                        <span id="co-percent">
-                            0
-                        </span>%
-                    </span>
-
-                </div>
-
-            </div>
-
-        </article>
-
-
-        <!-- CH4 -->
-
-        <article
-            class="sensor-card glass glass-tilt"
-            id="card-ch4"
-        >
-
-            <div class="sensor-header">
-
-                <div class="sensor-name">
-                    METHANE / COMBUSTIBLE
-                </div>
-
-                <div class="sensor-type">
-                    MQ-9
-                </div>
+                <div
+                    class="meter-fill"
+                    id="bar-pm10"
+                ></div>
 
             </div>
 
 
-            <div>
+            <div class="meter-head">
 
-                <div class="sensor-value">
+                <span>
+                    EXPOSURE
+                </span>
 
-                    <span
-                        class="sensor-number"
-                        id="ch4"
-                    >
-                        --
-                    </span>
-
-                    <span class="sensor-unit">
-                        ppm
-                    </span>
-
-                </div>
-
-
-                <div class="meter-track">
-
-                    <div
-                        class="meter-fill"
-                        id="bar-ch4"
-                    ></div>
-
-                </div>
-
-
-                <div class="meter-head">
-
-                    <span>
-                        LEVEL
-                    </span>
-
-                    <span>
-                        <span id="ch4-percent">
-                            0
-                        </span>%
-                    </span>
-
-                </div>
+                <span>
+                    <span id="pm10-percent">
+                        0
+                    </span>%
+                </span>
 
             </div>
 
-        </article>
+        </div>
+
+    </article>
 
 
-        <!-- NH3 -->
+    <!-- CO -->
 
-        <article
-            class="sensor-card glass glass-tilt"
-            id="card-nh3"
-        >
+    <article
+        class="sensor-card glass glass-tilt"
+        id="card-co"
+    >
 
-            <div class="sensor-header">
+        <div class="sensor-header">
 
-                <div class="sensor-name">
-                    AMMONIA / GAS RESPONSE
-                </div>
+            <div class="sensor-name">
+                CARBON MONOXIDE
+            </div>
 
-                <div class="sensor-type">
-                    MQ-135
-                </div>
+            <div class="sensor-type">
+                MQ-7
+            </div>
+
+        </div>
+
+
+        <div>
+
+            <div class="sensor-value">
+
+                <span
+                    class="sensor-number"
+                    id="co"
+                >
+                    --
+                </span>
+
+                <span class="sensor-unit">
+                    ppm
+                </span>
 
             </div>
 
 
-            <div>
+            <div class="meter-track">
 
-                <div class="sensor-value">
-
-                    <span
-                        class="sensor-number"
-                        id="nh3"
-                    >
-                        --
-                    </span>
-
-                    <span class="sensor-unit">
-                        ppm
-                    </span>
-
-                </div>
-
-
-                <div class="meter-track">
-
-                    <div
-                        class="meter-fill"
-                        id="bar-nh3"
-                    ></div>
-
-                </div>
-
-
-                <div class="meter-head">
-
-                    <span>
-                        LEVEL
-                    </span>
-
-                    <span>
-                        <span id="nh3-percent">
-                            0
-                        </span>%
-                    </span>
-
-                </div>
-
-            </div>
-
-        </article>
-
-
-        <!-- O3 -->
-
-        <article
-            class="sensor-card glass glass-tilt"
-            id="card-o3"
-        >
-
-            <div class="sensor-header">
-
-                <div class="sensor-name">
-                    OZONE
-                </div>
-
-                <div class="sensor-type">
-                    MQ-131
-                </div>
+                <div
+                    class="meter-fill"
+                    id="bar-co"
+                ></div>
 
             </div>
 
 
-            <div>
+            <div class="meter-head">
 
-                <div class="sensor-value">
+                <span>
+                    LEVEL
+                </span>
 
-                    <span
-                        class="sensor-number"
-                        id="o3"
-                    >
-                        --
-                    </span>
-
-                    <span class="sensor-unit">
-                        ppb
-                    </span>
-
-                </div>
-
-
-                <div class="meter-track">
-
-                    <div
-                        class="meter-fill"
-                        id="bar-o3"
-                    ></div>
-
-                </div>
-
-
-                <div class="meter-head">
-
-                    <span>
-                        LEVEL
-                    </span>
-
-                    <span>
-                        <span id="o3-percent">
-                            0
-                        </span>%
-                    </span>
-
-                </div>
+                <span>
+                    <span id="co-percent">
+                        0
+                    </span>%
+                </span>
 
             </div>
 
-        </article>
+        </div>
 
-    </div>
-
-
-    <!-- TELEMETRY -->
-
-    <div class="telemetry-row">
+    </article>
 
 
-        <section class="status-card glass glass-tilt">
+    <!-- CH4 -->
 
-            <div class="status-title">
-                NODE TELEMETRY
+    <article
+        class="sensor-card glass glass-tilt"
+        id="card-ch4"
+    >
+
+        <div class="sensor-header">
+
+            <div class="sensor-name">
+                METHANE / COMBUSTIBLE
             </div>
 
-            <div class="status-sub">
-                Real-time system diagnostics
+            <div class="sensor-type">
+                MQ-9
             </div>
 
-
-            <div class="status-items">
-
-
-                <div class="status-item">
-
-                    <span class="status-label">
-                        DEVICE
-                    </span>
-
-                    <span
-                        class="status-value"
-                        id="device-status"
-                    >
-                        AQI-001
-                    </span>
-
-                </div>
+        </div>
 
 
-                <div class="status-item">
+        <div>
 
-                    <span class="status-label">
-                        CONTROLLER
-                    </span>
+            <div class="sensor-value">
 
-                    <span class="status-value value-good">
-                        ESP32-S3
-                    </span>
+                <span
+                    class="sensor-number"
+                    id="ch4"
+                >
+                    --
+                </span>
 
-                </div>
-
-
-                <div class="status-item">
-
-                    <span class="status-label">
-                        TELEMETRY
-                    </span>
-
-                    <span
-                        class="status-value value-good"
-                        id="telemetry-status"
-                    >
-                        LIVE
-                    </span>
-
-                </div>
-
-
-                <div class="status-item">
-
-                    <span class="status-label">
-                        CLOUD
-                    </span>
-
-                    <span
-                        class="status-value value-good"
-                        id="api-status"
-                    >
-                        ONLINE
-                    </span>
-
-                </div>
-
-
-                <div class="status-item">
-
-                    <span class="status-label">
-                        GPS
-                    </span>
-
-                    <span
-                        class="status-value value-warn"
-                        id="gps-status-text"
-                    >
-                        WAITING
-                    </span>
-
-                </div>
-
-
-                <div class="status-item">
-
-                    <span class="status-label">
-                        SATELLITES
-                    </span>
-
-                    <span
-                        class="status-value"
-                        id="satellites-value"
-                    >
-                        --
-                    </span>
-
-                </div>
-
-
-                <div class="status-item">
-
-                    <span class="status-label">
-                        ACCURACY
-                    </span>
-
-                    <span
-                        class="status-value"
-                        id="accuracy-value"
-                    >
-                        --
-                    </span>
-
-                </div>
-
-
-                <div class="status-item">
-
-                    <span class="status-label">
-                        LATITUDE
-                    </span>
-
-                    <span
-                        class="status-value"
-                        id="latitude-value"
-                    >
-                        --
-                    </span>
-
-                </div>
-
-
-                <div class="status-item">
-
-                    <span class="status-label">
-                        LONGITUDE
-                    </span>
-
-                    <span
-                        class="status-value"
-                        id="longitude-value"
-                    >
-                        --
-                    </span>
-
-                </div>
-
-
-                <div class="status-item">
-
-                    <span class="status-label">
-                        UPDATE RATE
-                    </span>
-
-                    <span class="status-value">
-                        ~10 SEC
-                    </span>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <!-- CHART -->
-
-        <section class="chart-card glass glass-tilt">
-
-            <div class="chart-heading">
-
-                <div>
-
-                    <div class="chart-title">
-                        AIR QUALITY HISTORY
-                    </div>
-
-                    <div class="chart-caption">
-                        Rolling present-AQI telemetry
-                    </div>
-
-                </div>
-
-                <div class="chart-window">
-                    25 SAMPLES
-                </div>
+                <span class="sensor-unit">
+                    ppm
+                </span>
 
             </div>
 
 
-            <div class="chart-container">
+            <div class="meter-track">
 
-                <canvas id="aqiChart"></canvas>
+                <div
+                    class="meter-fill"
+                    id="bar-ch4"
+                ></div>
 
             </div>
 
-        </section>
 
-    </div>
+            <div class="meter-head">
+
+                <span>
+                    LEVEL
+                </span>
+
+                <span>
+                    <span id="ch4-percent">
+                        0
+                    </span>%
+                </span>
+
+            </div>
+
+        </div>
+
+    </article>
+
+
+    <!-- NH3 -->
+
+    <article
+        class="sensor-card glass glass-tilt"
+        id="card-nh3"
+    >
+
+        <div class="sensor-header">
+
+            <div class="sensor-name">
+                AMMONIA / GAS RESPONSE
+            </div>
+
+            <div class="sensor-type">
+                MQ-135
+            </div>
+
+        </div>
+
+
+        <div>
+
+            <div class="sensor-value">
+
+                <span
+                    class="sensor-number"
+                    id="nh3"
+                >
+                    --
+                </span>
+
+                <span class="sensor-unit">
+                    ppm
+                </span>
+
+            </div>
+
+
+            <div class="meter-track">
+
+                <div
+                    class="meter-fill"
+                    id="bar-nh3"
+                ></div>
+
+            </div>
+
+
+            <div class="meter-head">
+
+                <span>
+                    LEVEL
+                </span>
+
+                <span>
+                    <span id="nh3-percent">
+                        0
+                    </span>%
+                </span>
+
+            </div>
+
+        </div>
+
+    </article>
+
+
+    <!-- O3 -->
+
+    <article
+        class="sensor-card glass glass-tilt"
+        id="card-o3"
+    >
+
+        <div class="sensor-header">
+
+            <div class="sensor-name">
+                OZONE
+            </div>
+
+            <div class="sensor-type">
+                MQ-131
+            </div>
+
+        </div>
+
+
+        <div>
+
+            <div class="sensor-value">
+
+                <span
+                    class="sensor-number"
+                    id="o3"
+                >
+                    --
+                </span>
+
+                <span class="sensor-unit">
+                    ppb
+                </span>
+
+            </div>
+
+
+            <div class="meter-track">
+
+                <div
+                    class="meter-fill"
+                    id="bar-o3"
+                ></div>
+
+            </div>
+
+
+            <div class="meter-head">
+
+                <span>
+                    LEVEL
+                </span>
+
+                <span>
+                    <span id="o3-percent">
+                        0
+                    </span>%
+                </span>
+
+            </div>
+
+        </div>
+
+    </article>
 
 </div>
 
+
+<!-- TELEMETRY -->
+
+<div class="telemetry-row">
+
+
+    <section class="status-card glass glass-tilt">
+
+        <div class="status-title">
+            NODE TELEMETRY
+        </div>
+
+        <div class="status-sub">
+            Real-time system diagnostics
+        </div>
+
+
+        <div class="status-items">
+
+
+            <div class="status-item">
+
+                <span class="status-label">
+                    DEVICE
+                </span>
+
+                <span
+                    class="status-value"
+                    id="device-status"
+                >
+                    AQI-001
+                </span>
+
+            </div>
+
+
+            <div class="status-item">
+
+                <span class="status-label">
+                    CONTROLLER
+                </span>
+
+                <span class="status-value value-good">
+                    ESP32-S3
+                </span>
+
+            </div>
+
+
+            <div class="status-item">
+
+                <span class="status-label">
+                    TELEMETRY
+                </span>
+
+                <span
+                    class="status-value value-good"
+                    id="telemetry-status"
+                >
+                    LIVE
+                </span>
+
+            </div>
+
+
+            <div class="status-item">
+
+                <span class="status-label">
+                    CLOUD
+                </span>
+
+                <span
+                    class="status-value value-good"
+                    id="api-status"
+                >
+                    ONLINE
+                </span>
+
+            </div>
+
+
+            <div class="status-item">
+
+                <span class="status-label">
+                    GPS
+                </span>
+
+                <span
+                    class="status-value value-warn"
+                    id="gps-status-text"
+                >
+                    WAITING
+                </span>
+
+            </div>
+
+
+            <div class="status-item">
+
+                <span class="status-label">
+                    SATELLITES
+                </span>
+
+                <span
+                    class="status-value"
+                    id="satellites-value"
+                >
+                    --
+                </span>
+
+            </div>
+
+
+            <div class="status-item">
+
+                <span class="status-label">
+                    ACCURACY
+                </span>
+
+                <span
+                    class="status-value"
+                    id="accuracy-value"
+                >
+                    --
+                </span>
+
+            </div>
+
+
+            <div class="status-item">
+
+                <span class="status-label">
+                    LATITUDE
+                </span>
+
+                <span
+                    class="status-value"
+                    id="latitude-value"
+                >
+                    --
+                </span>
+
+            </div>
+
+
+            <div class="status-item">
+
+                <span class="status-label">
+                    LONGITUDE
+                </span>
+
+                <span
+                    class="status-value"
+                    id="longitude-value"
+                >
+                    --
+                </span>
+
+            </div>
+
+
+            <div class="status-item">
+
+                <span class="status-label">
+                    UPDATE RATE
+                </span>
+
+                <span class="status-value">
+                    ~10 SEC
+                </span>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CHART -->
+
+    <section class="chart-card glass glass-tilt">
+
+        <div class="chart-heading">
+
+            <div>
+
+                <div class="chart-title">
+                    AIR QUALITY HISTORY
+                </div>
+
+                <div class="chart-caption">
+                    Rolling present-AQI telemetry
+                </div>
+
+            </div>
+
+            <div class="chart-window">
+                25 SAMPLES
+            </div>
+
+        </div>
+
+
+        <div class="chart-container">
+
+            <canvas id="aqiChart"></canvas>
+
+        </div>
+
+    </section>
+
+</div>
+```
+
+</div>
 
 <!-- =====================================================
      RIGHT RAIL
@@ -2979,239 +2982,245 @@ body {
 
 <div class="rail">
 
+```
+<!-- LOCATION -->
 
-    <!-- LOCATION -->
+<section class="location-card glass glass-tilt">
 
-    <section class="location-card glass glass-tilt">
+    <div class="location-heading">
 
-        <div class="location-heading">
+        <div>
 
-            <div>
-
-                <div class="location-title">
-                    DEVICE LOCATION
-                </div>
-
-                <div class="location-sub">
-                    Live NEO-6M GPS position
-                </div>
-
+            <div class="location-title">
+                DEVICE LOCATION
             </div>
 
-
-            <div
-                class="location-state"
-                id="location-state"
-            >
-                WAITING FOR GPS
-            </div>
-
-        </div>
-
-
-        <div class="map-wrap">
-
-            <div id="device-map"></div>
-
-            <div
-                class="accuracy-badge"
-                id="accuracy-badge"
-            >
-                ◎
-                <span id="accuracy-text">
-                    --
-                </span>
-            </div>
-
-        </div>
-
-
-        <div class="location-footer">
-
-            <div
-                class="location-name"
-                id="location-name"
-            >
-                GPS location unavailable
-            </div>
-
-
-            <a
-                href="#"
-                target="_blank"
-                id="maps-link"
-                class="maps-button"
-                style="display:none;"
-            >
-                📍 MAPS
-            </a>
-
-        </div>
-
-    </section>
-
-
-    <!-- FUTURE AQI -->
-
-    <section class="forecast-card glass glass-tilt">
-
-        <div class="advice-title">
-            FUTURE AQI • GPS LOCATION
-        </div>
-
-
-        <div
-            class="forecast-location"
-            id="forecast-location"
-        >
-            Waiting for GPS fix...
-        </div>
-
-
-        <div class="forecast-grid">
-
-
-            <div class="forecast-item">
-
-                <div class="forecast-time">
-                    +1 HOUR
-                </div>
-
-                <div
-                    class="forecast-aqi"
-                    id="forecast-1h"
-                >
-                    --
-                </div>
-
-                <div
-                    class="forecast-category"
-                    id="forecast-1h-cat"
-                >
-                    --
-                </div>
-
-            </div>
-
-
-            <div class="forecast-item">
-
-                <div class="forecast-time">
-                    +3 HOURS
-                </div>
-
-                <div
-                    class="forecast-aqi"
-                    id="forecast-3h"
-                >
-                    --
-                </div>
-
-                <div
-                    class="forecast-category"
-                    id="forecast-3h-cat"
-                >
-                    --
-                </div>
-
-            </div>
-
-
-            <div class="forecast-item">
-
-                <div class="forecast-time">
-                    +6 HOURS
-                </div>
-
-                <div
-                    class="forecast-aqi"
-                    id="forecast-6h"
-                >
-                    --
-                </div>
-
-                <div
-                    class="forecast-category"
-                    id="forecast-6h-cat"
-                >
-                    --
-                </div>
-
+            <div class="location-sub">
+                Live NEO-6M GPS position
             </div>
 
         </div>
 
 
         <div
-            class="forecast-source"
-            id="forecast-source"
+            class="location-state"
+            id="location-state"
         >
-            Waiting for location forecast...
+            WAITING FOR GPS
         </div>
 
-    </section>
+    </div>
 
 
-    <!-- AI ADVICE -->
+    <div class="map-wrap">
 
-    <section class="advice-card glass glass-tilt">
+        <div id="device-map"></div>
 
-        <div class="advice-title">
-            AI HEALTH ADVICE
+        <div
+            class="accuracy-badge"
+            id="accuracy-badge"
+        >
+            ◎
+            <span id="accuracy-text">
+                --
+            </span>
+        </div>
+
+    </div>
+
+
+    <div class="location-footer">
+
+        <div
+            class="location-name"
+            id="location-name"
+        >
+            GPS location unavailable
         </div>
 
 
-        <div id="advice-list">
+        <a
+            href="#"
+            target="_blank"
+            id="maps-link"
+            class="maps-button"
+            style="display:none;"
+        >
+            📍 MAPS
+        </a>
+
+    </div>
+
+</section>
+
+
+<!-- FUTURE AQI -->
+
+<section class="forecast-card glass glass-tilt">
+
+    <div class="advice-title">
+        FUTURE AQI • GPS LOCATION
+    </div>
+
+
+    <div
+        class="forecast-location"
+        id="forecast-location"
+    >
+        Waiting for GPS fix...
+    </div>
+
+
+    <div class="forecast-grid">
+
+
+        <!-- +1 HOUR -->
+
+        <div class="forecast-item">
+
+            <div class="forecast-time">
+                +1 HOUR
+            </div>
 
             <div
-                style="
-                    color:var(--muted);
-                    font-size:.7rem;
-                "
+                class="forecast-aqi"
+                id="forecast-1h"
             >
-                Waiting for ML analysis...
+                --
+            </div>
+
+            <div
+                class="forecast-category"
+                id="forecast-1h-cat"
+            >
+                --
             </div>
 
         </div>
 
-    </section>
 
+        <!-- +2 HOURS -->
 
-    <!-- ALERT -->
+        <div class="forecast-item">
 
-    <div class="alert-strip glass">
-
-        <div class="alert-icon">
-            ◈
-        </div>
-
-
-        <div class="alert-text">
-
-            <div
-                class="alert-main"
-                id="alert-main"
-            >
-                SYSTEM NOMINAL
+            <div class="forecast-time">
+                +2 HOURS
             </div>
 
             <div
-                class="alert-sub"
-                id="alert-sub"
+                class="forecast-aqi"
+                id="forecast-2h"
             >
-                Waiting for live environmental telemetry.
+                --
+            </div>
+
+            <div
+                class="forecast-category"
+                id="forecast-2h-cat"
+            >
+                --
+            </div>
+
+        </div>
+
+
+        <!-- +3 HOURS -->
+
+        <div class="forecast-item">
+
+            <div class="forecast-time">
+                +3 HOURS
+            </div>
+
+            <div
+                class="forecast-aqi"
+                id="forecast-3h"
+            >
+                --
+            </div>
+
+            <div
+                class="forecast-category"
+                id="forecast-3h-cat"
+            >
+                --
             </div>
 
         </div>
 
     </div>
 
+
+    <div
+        class="forecast-source"
+        id="forecast-source"
+    >
+        Waiting for location forecast...
+    </div>
+
+</section>
+
+
+<!-- AI ADVICE -->
+
+<section class="advice-card glass glass-tilt">
+
+    <div class="advice-title">
+        AI HEALTH ADVICE
+    </div>
+
+
+    <div id="advice-list">
+
+        <div
+            style="
+                color:var(--muted);
+                font-size:.7rem;
+            "
+        >
+            Waiting for ML analysis...
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ALERT -->
+
+<div class="alert-strip glass">
+
+    <div class="alert-icon">
+        ◈
+    </div>
+
+
+    <div class="alert-text">
+
+        <div
+            class="alert-main"
+            id="alert-main"
+        >
+            SYSTEM NOMINAL
+        </div>
+
+        <div
+            class="alert-sub"
+            id="alert-sub"
+        >
+            Waiting for live environmental telemetry.
+        </div>
+
+    </div>
+
 </div>
+```
 
 </div>
 
 </div>
 
+</div>
 
 <script>
 
@@ -4195,23 +4204,9 @@ function updateForecast(
         );
 
 
-    if (
-        !Array.isArray(
-            data.future_forecast
-        ) ||
-        data.future_forecast.length === 0
-    ) {
-
-        location.textContent =
-            "Waiting for GPS location forecast...";
-
-
-        source.textContent =
-            "No future forecast available yet.";
-
-        return;
-    }
-
+    /* -------------------------------------------------
+       LOCATION
+    ------------------------------------------------- */
 
     if (
         data.latitude !== null &&
@@ -4225,23 +4220,92 @@ function updateForecast(
             Number(data.latitude).toFixed(4) +
             " • Lon " +
             Number(data.longitude).toFixed(4);
+
+    } else {
+
+        location.textContent =
+            "Waiting for GPS location forecast...";
     }
 
+
+    /* -------------------------------------------------
+       RESET FORECAST VALUES
+    ------------------------------------------------- */
+
+    setText(
+        "forecast-1h",
+        "--"
+    );
+
+    setText(
+        "forecast-1h-cat",
+        "--"
+    );
+
+    setText(
+        "forecast-2h",
+        "--"
+    );
+
+    setText(
+        "forecast-2h-cat",
+        "--"
+    );
+
+    setText(
+        "forecast-3h",
+        "--"
+    );
+
+    setText(
+        "forecast-3h-cat",
+        "--"
+    );
+
+
+    /* -------------------------------------------------
+       NO FORECAST
+    ------------------------------------------------- */
+
+    if (
+        !Array.isArray(
+            data.future_forecast
+        ) ||
+        data.future_forecast.length === 0
+    ) {
+
+        source.textContent =
+            "No future forecast available yet.";
+
+        return;
+    }
+
+
+    /* -------------------------------------------------
+       UPDATE FORECASTS
+    ------------------------------------------------- */
 
     data.future_forecast.forEach(
         item => {
 
             const hours =
-                Number(item.hours_ahead);
+                Number(
+                    item.hours_ahead
+                );
 
 
-            if (hours === 1) {
+            /* =========================================
+               +1 HOUR
+            ========================================= */
+
+            if (
+                hours === 1
+            ) {
 
                 setText(
                     "forecast-1h",
                     item.aqi ?? "--"
                 );
-
 
                 setText(
                     "forecast-1h-cat",
@@ -4269,13 +4333,57 @@ function updateForecast(
             }
 
 
-            if (hours === 3) {
+            /* =========================================
+               +2 HOURS
+            ========================================= */
+
+            if (
+                hours === 2
+            ) {
+
+                setText(
+                    "forecast-2h",
+                    item.aqi ?? "--"
+                );
+
+                setText(
+                    "forecast-2h-cat",
+                    item.category ?? "--"
+                );
+
+
+                const el =
+                    document.getElementById(
+                        "forecast-2h"
+                    );
+
+
+                if (
+                    el &&
+                    item.aqi !== null &&
+                    item.aqi !== undefined
+                ) {
+
+                    el.style.color =
+                        forecastAQIColor(
+                            item.aqi
+                        );
+                }
+            }
+
+
+            /* =========================================
+               +3 HOURS
+            ========================================= */
+
+            if (
+                hours === 3
+            ) {
 
                 setText(
                     "forecast-3h",
                     item.aqi ?? "--"
                 );
-
 
                 setText(
                     "forecast-3h-cat",
@@ -4302,43 +4410,13 @@ function updateForecast(
                 }
             }
 
-
-            if (hours === 6) {
-
-                setText(
-                    "forecast-6h",
-                    item.aqi ?? "--"
-                );
-
-
-                setText(
-                    "forecast-6h-cat",
-                    item.category ?? "--"
-                );
-
-
-                const el =
-                    document.getElementById(
-                        "forecast-6h"
-                    );
-
-
-                if (
-                    el &&
-                    item.aqi !== null &&
-                    item.aqi !== undefined
-                ) {
-
-                    el.style.color =
-                        forecastAQIColor(
-                            item.aqi
-                        );
-                }
-            }
-
         }
     );
 
+
+    /* -------------------------------------------------
+       FORECAST SOURCE
+    ------------------------------------------------- */
 
     source.textContent =
         data.forecast_source
@@ -5219,3 +5297,16 @@ document.addEventListener(
 
 </body>
 </html>
+```
+
+Save this as `templates/index.html` (or replace your existing `index.html` with it).
+
+Then run:
+
+```powershell
+git add index.html
+git commit -m "Show only 1 2 and 3 hour AQI forecasts"
+git push origin main
+```
+
+One important point: this frontend now expects the backend to return `hours_ahead` values **1, 2, and 3**. It completely ignores any 6-hour value.
