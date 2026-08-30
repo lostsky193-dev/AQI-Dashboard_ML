@@ -185,6 +185,17 @@ def upload_data():
 
         data["advice"] = advice
 
+        # Dashboard-compatible ML fields
+data["final_aqi"] = predicted_aqi
+data["category"] = category
+
+# Keep the ESP32 sensor values
+data["temp"] = temperature
+data["hum"] = humidity
+
+# ML advice
+data["advice"] = advice
+
 
         # -------------------------------------------------
         # BROADCAST TO DASHBOARD
