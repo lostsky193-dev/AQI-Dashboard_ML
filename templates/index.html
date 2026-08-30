@@ -5297,16 +5297,3 @@ document.addEventListener(
 
 </body>
 </html>
-```
-
-Save this as `templates/index.html` (or replace your existing `index.html` with it).
-
-Then run:
-
-```powershell
-git add index.html
-git commit -m "Show only 1 2 and 3 hour AQI forecasts"
-git push origin main
-```
-
-One important point: this frontend now expects the backend to return `hours_ahead` values **1, 2, and 3**. It completely ignores any 6-hour value.
