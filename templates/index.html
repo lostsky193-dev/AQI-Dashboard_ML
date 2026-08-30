@@ -1,48 +1,56 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
 <title>AeroSense AI | Environmental Intelligence</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+<link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap"
+    rel="stylesheet"
+>
 
 <style>
 
 /* =========================================================
-   TOKENS — "Dark Lumina" v2
+   TOKENS
 ========================================================= */
 
 :root {
+
     --bg-0: #03060c;
     --bg-1: #060b16;
     --bg-2: #0a1220;
 
-    --glass:    rgba(255,255,255,.045);
-    --glass-2:  rgba(255,255,255,.075);
+    --glass: rgba(255,255,255,.045);
+    --glass-2: rgba(255,255,255,.075);
 
-    --stroke:    rgba(255,255,255,.09);
+    --stroke: rgba(255,255,255,.09);
     --stroke-hi: rgba(255,255,255,.20);
 
-    --text:  #f5f7fb;
+    --text: #f5f7fb;
     --muted: #93a0b4;
-    --dim:   #576177;
+    --dim: #576177;
 
-    --cyan:   #2dd9ec;
+    --cyan: #2dd9ec;
     --violet: #a78bfa;
-    --green:  #35e0a1;
+    --green: #35e0a1;
     --yellow: #f6c453;
     --orange: #fb9a56;
-    --red:    #fb6f83;
+    --red: #fb6f83;
 
     --r-xl: clamp(16px, 1.6vh, 26px);
     --r-lg: clamp(12px, 1.2vh, 18px);
@@ -59,21 +67,13 @@
     --gy: 20%;
 }
 
+/* =========================================================
+   GLOBAL
+========================================================= */
+
 * {
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        animation-duration: .001ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: .001ms !important;
-    }
-
-    .cloud {
-        display: none;
-    }
 }
 
 html,
@@ -83,9 +83,13 @@ body {
 }
 
 body {
+
     color: var(--text);
+
     font-family: var(--font-body);
+
     -webkit-font-smoothing: antialiased;
+
     overflow: hidden;
 
     background:
@@ -110,30 +114,48 @@ body {
             var(--bg-1) 45%,
             var(--bg-2)
         );
-
-    transition: background-position .6s var(--ease);
 }
 
+/* =========================================================
+   BACKGROUND
+========================================================= */
+
 .grain {
+
     position: fixed;
     inset: 0;
+
     z-index: -3;
+
     pointer-events: none;
+
     opacity: .03;
+
     mix-blend-mode: overlay;
 
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 .grid-overlay {
+
     position: fixed;
     inset: 0;
+
     z-index: -4;
+
     pointer-events: none;
 
     background-image:
-        linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+        linear-gradient(
+            rgba(255,255,255,.02) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(255,255,255,.02) 1px,
+            transparent 1px
+        );
 
     background-size: 48px 48px;
 
@@ -150,125 +172,193 @@ body {
 ========================================================= */
 
 .atmosphere {
+
     position: fixed;
     inset: 0;
+
     z-index: -2;
+
     pointer-events: none;
+
     overflow: hidden;
 }
 
 .cloud {
+
     position: absolute;
+
     opacity: .05;
+
     filter: blur(1px);
-    background: radial-gradient(circle, #fff, transparent 70%);
+
+    background:
+        radial-gradient(
+            circle,
+            #fff,
+            transparent 70%
+        );
+
     border-radius: 50%;
+
     will-change: transform;
 }
 
 .cloud::before,
 .cloud::after {
+
     content: "";
+
     position: absolute;
+
     background: inherit;
+
     border-radius: 50%;
 }
 
 .cloud-a {
+
     width: 220px;
     height: 60px;
+
     top: 8%;
     left: -300px;
-    animation: driftA 90s linear infinite;
+
+    animation:
+        driftA 90s linear infinite;
 }
 
 .cloud-a::before {
+
     width: 130px;
     height: 130px;
+
     top: -55px;
     left: 30px;
 }
 
 .cloud-a::after {
+
     width: 90px;
     height: 90px;
+
     top: -30px;
     left: 130px;
 }
 
 .cloud-b {
+
     width: 160px;
     height: 44px;
+
     top: 22%;
     left: -260px;
-    animation: driftB 130s linear infinite;
+
+    animation:
+        driftB 130s linear infinite;
+
     animation-delay: -40s;
+
     opacity: .04;
 }
 
 .cloud-b::before {
+
     width: 100px;
     height: 100px;
+
     top: -42px;
     left: 20px;
 }
 
 .cloud-b::after {
+
     width: 70px;
     height: 70px;
+
     top: -22px;
     left: 96px;
 }
 
 .cloud-c {
+
     width: 260px;
     height: 70px;
+
     top: 4%;
     left: -340px;
-    animation: driftA 150s linear infinite;
+
+    animation:
+        driftA 150s linear infinite;
+
     animation-delay: -70s;
+
     opacity: .035;
 }
 
 .cloud-c::before {
+
     width: 150px;
     height: 150px;
+
     top: -62px;
     left: 40px;
 }
 
 .cloud-c::after {
+
     width: 110px;
     height: 110px;
+
     top: -34px;
     left: 160px;
 }
 
 @keyframes driftA {
+
     to {
-        transform: translateX(calc(100vw + 400px));
+        transform:
+            translateX(
+                calc(100vw + 400px)
+            );
     }
 }
 
 @keyframes driftB {
+
     to {
-        transform: translateX(calc(100vw + 360px));
+        transform:
+            translateX(
+                calc(100vw + 360px)
+            );
     }
 }
 
 .treeline {
+
     position: absolute;
+
     left: 0;
     right: 0;
     bottom: 0;
-    height: clamp(60px, 9vh, 130px);
+
+    height:
+        clamp(
+            60px,
+            9vh,
+            130px
+        );
+
     opacity: .1;
 
     background-repeat: repeat-x;
-    background-position: bottom;
-    background-size: 340px 100%;
 
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='130' viewBox='0 0 340 130'%3E%3Cg fill='%2335e0a1'%3E%3Cpath d='M30 130V70l-14 8 14-26-11 5 16-30 16 30-11-5 14 26-14-8v60z'/%3E%3Cpath d='M110 130V60l-16 9 16-30-13 6 19-34 19 34-13-6 16 30-16-9v70z'/%3E%3Cpath d='M195 130V78l-12 7 12-22-9 4 14-26 14 26-9-4 12 22-12-7v52z'/%3E%3Cpath d='M270 130V55l-18 10 18-33-14 6 21-38 21 38-14-6 18 33-18-10v75z'/%3E%3Cpath d='M320 130V82l-10 6 10-19-8 3 12-22 12 22-8-3 10 19-10-6v48z'/%3E%3C/g%3E%3C/svg%3E");
+    background-position: bottom;
+
+    background-size:
+        340px 100%;
+
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='130' viewBox='0 0 340 130'%3E%3Cg fill='%2335e0a1'%3E%3Cpath d='M30 130V70l-14 8 14-26-11 5 16-30 16 30-11-5 14 26-14-8v60z'/%3E%3Cpath d='M110 130V60l-16 9 16-30-13 6 19-34 19 34-13-6 16 30-16-9v70z'/%3E%3Cpath d='M195 130V78l-12 7 12-22-9 4 14-26 14 26-9-4 12 22-12-7v52z'/%3E%3Cpath d='M270 130V55l-18 10 18-33-14 6 21-38 21 38-14-6 18 33-18-10v75z'/%3E%3Cpath d='M320 130V82l-10 6 10-19-8 3 12-22 12 22-8-3 10 19-10-6v48z'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 /* =========================================================
@@ -276,6 +366,7 @@ body {
 ========================================================= */
 
 .glass {
+
     position: relative;
 
     background:
@@ -285,10 +376,16 @@ body {
             var(--glass) 60%
         );
 
-    border: 1px solid var(--stroke);
+    border:
+        1px solid var(--stroke);
 
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter:
+        blur(24px)
+        saturate(160%);
+
+    -webkit-backdrop-filter:
+        blur(24px)
+        saturate(160%);
 
     box-shadow:
         0 20px 60px rgba(0,0,0,.45),
@@ -303,9 +400,13 @@ body {
 }
 
 .glass::before {
+
     content: "";
+
     position: absolute;
+
     inset: 0;
+
     pointer-events: none;
 
     background:
@@ -323,9 +424,12 @@ body {
 }
 
 .glass-tilt:hover {
-    border-color: var(--stroke-hi);
 
-    transform: translateY(-2px);
+    border-color:
+        var(--stroke-hi);
+
+    transform:
+        translateY(-2px);
 
     box-shadow:
         0 26px 70px rgba(0,0,0,.5),
@@ -333,12 +437,18 @@ body {
 }
 
 .glass-tilt:active {
-    transform: translateY(0) scale(.985);
+
+    transform:
+        translateY(0)
+        scale(.985);
 }
 
 .ripple {
+
     position: absolute;
+
     border-radius: 50%;
+
     pointer-events: none;
 
     background:
@@ -349,15 +459,21 @@ body {
         );
 
     transform: scale(0);
+
     opacity: .9;
-    animation: rippleOut .65s var(--ease) forwards;
+
+    animation:
+        rippleOut .65s var(--ease) forwards;
 
     z-index: 5;
 }
 
 @keyframes rippleOut {
+
     to {
+
         transform: scale(1);
+
         opacity: 0;
     }
 }
@@ -367,19 +483,26 @@ body {
 ========================================================= */
 
 .app {
+
     height: 100dvh;
+
     width: 100%;
+
     max-width: 1900px;
+
     margin: 0 auto;
 
     padding:
-        clamp(8px, 1vh, 14px)
-        clamp(10px, 1.2vw, 18px);
+        clamp(8px,1vh,14px)
+        clamp(10px,1.2vw,18px);
 
     display: grid;
-    grid-template-rows: auto 1fr;
 
-    gap: clamp(8px, 1vh, 12px);
+    grid-template-rows:
+        auto 1fr;
+
+    gap:
+        clamp(8px,1vh,12px);
 
     min-height: 0;
 }
@@ -389,6 +512,7 @@ body {
 ========================================================= */
 
 .header {
+
     border-radius: var(--r-lg);
 
     padding:
@@ -396,39 +520,57 @@ body {
         clamp(14px,1.4vw,20px);
 
     display: flex;
+
     justify-content: space-between;
+
     align-items: center;
 
     gap: 14px;
 
-    animation: settle .6s var(--ease) both;
+    animation:
+        settle .6s var(--ease) both;
 
     flex-wrap: wrap;
 }
 
 @keyframes settle {
+
     from {
+
         opacity: 0;
-        transform: translateY(-14px);
+
+        transform:
+            translateY(-14px);
     }
 
     to {
+
         opacity: 1;
-        transform: translateY(0);
+
+        transform:
+            translateY(0);
     }
 }
 
 .brand {
+
     display: flex;
+
     align-items: center;
+
     gap: 12px;
 }
 
 .brand-icon {
-    width: clamp(30px,3.6vh,38px);
-    height: clamp(30px,3.6vh,38px);
+
+    width:
+        clamp(30px,3.6vh,38px);
+
+    height:
+        clamp(30px,3.6vh,38px);
 
     display: grid;
+
     place-items: center;
 
     border-radius: 12px;
@@ -440,25 +582,32 @@ body {
             rgba(167,139,250,.22)
         );
 
-    border: 1px solid rgba(255,255,255,.16);
+    border:
+        1px solid rgba(255,255,255,.16);
 
     box-shadow:
         inset 0 1px rgba(255,255,255,.2),
         0 0 26px rgba(45,217,236,.16);
 
-    font-size: clamp(14px,1.7vh,17px);
+    font-size:
+        clamp(14px,1.7vh,17px);
 
-    animation: breathe 4.5s ease-in-out infinite;
+    animation:
+        breathe 4.5s ease-in-out infinite;
 }
 
 @keyframes breathe {
-    0%, 100% {
+
+    0%,
+    100% {
+
         box-shadow:
             inset 0 1px rgba(255,255,255,.2),
             0 0 26px rgba(45,217,236,.16);
     }
 
     50% {
+
         box-shadow:
             inset 0 1px rgba(255,255,255,.2),
             0 0 40px rgba(45,217,236,.28);
@@ -466,112 +615,182 @@ body {
 }
 
 .brand-name {
-    font-family: var(--font-display);
-    font-size: clamp(.8rem,1.15vh,.95rem);
+
+    font-family:
+        var(--font-display);
+
+    font-size:
+        clamp(.8rem,1.15vh,.95rem);
+
     font-weight: 800;
+
     letter-spacing: 2.4px;
 }
 
 .brand-sub {
-    color: var(--muted);
-    font-size: clamp(.52rem,.85vh,.62rem);
+
+    color:
+        var(--muted);
+
+    font-size:
+        clamp(.52rem,.85vh,.62rem);
+
     margin-top: 2px;
+
     letter-spacing: 1px;
 }
 
 .header-mid {
+
     display: flex;
+
     align-items: center;
+
     gap: 8px;
+
     flex-wrap: wrap;
 }
 
 .command-chip {
-    padding: 6px 10px;
-    border-radius: 999px;
 
-    font-size: clamp(.5rem,.78vh,.6rem);
+    padding:
+        6px 10px;
+
+    border-radius:
+        999px;
+
+    font-size:
+        clamp(.5rem,.78vh,.6rem);
+
     letter-spacing: .7px;
-    text-transform: uppercase;
 
-    color: var(--muted);
+    text-transform:
+        uppercase;
 
-    background: rgba(255,255,255,.045);
-    border: 1px solid rgba(255,255,255,.09);
+    color:
+        var(--muted);
+
+    background:
+        rgba(255,255,255,.045);
+
+    border:
+        1px solid rgba(255,255,255,.09);
 }
 
 .command-chip strong {
-    color: var(--text);
+
+    color:
+        var(--text);
 }
 
 .cloud-ok {
-    color: var(--green);
+
+    color:
+        var(--green);
 }
 
 .gps-wait {
-    color: var(--yellow);
-    transition: color .4s var(--ease);
+
+    color:
+        var(--yellow);
+
+    transition:
+        color .4s var(--ease);
 }
 
 .header-right {
+
     display: flex;
+
     align-items: center;
+
     gap: 10px;
 }
 
 .status-pill {
+
     display: flex;
+
     align-items: center;
+
     gap: 7px;
 
-    padding: 7px 12px;
-    border-radius: 999px;
+    padding:
+        7px 12px;
 
-    background: rgba(53,224,161,.08);
-    border: 1px solid rgba(53,224,161,.2);
+    border-radius:
+        999px;
 
-    color: #d3fbeb;
+    background:
+        rgba(53,224,161,.08);
 
-    font-size: clamp(.55rem,.82vh,.65rem);
+    border:
+        1px solid rgba(53,224,161,.2);
+
+    color:
+        #d3fbeb;
+
+    font-size:
+        clamp(.55rem,.82vh,.65rem);
+
     font-weight: 700;
+
     letter-spacing: .6px;
 }
 
 .live-dot {
+
     width: 7px;
+
     height: 7px;
 
     border-radius: 50%;
 
-    background: var(--green);
+    background:
+        var(--green);
 
     box-shadow:
-        0 0 0 0 rgba(53,224,161,.55);
+        0 0 0 0
+        rgba(53,224,161,.55);
 
-    animation: pulse 1.9s infinite;
+    animation:
+        pulse 1.9s infinite;
 }
 
 @keyframes pulse {
+
     0% {
+
         box-shadow:
-            0 0 0 0 rgba(53,224,161,.55);
+            0 0 0 0
+            rgba(53,224,161,.55);
     }
 
     70% {
+
         box-shadow:
-            0 0 0 9px rgba(53,224,161,0);
+            0 0 0 9px
+            rgba(53,224,161,0);
     }
 
     100% {
+
         box-shadow:
-            0 0 0 0 rgba(53,224,161,0);
+            0 0 0 0
+            rgba(53,224,161,0);
     }
 }
 
 .sync {
-    color: var(--cyan);
-    font-family: var(--font-mono);
-    font-size: clamp(.55rem,.8vh,.66rem);
+
+    color:
+        var(--cyan);
+
+    font-family:
+        var(--font-mono);
+
+    font-size:
+        clamp(.55rem,.8vh,.66rem);
 }
 
 /* =========================================================
@@ -579,23 +798,28 @@ body {
 ========================================================= */
 
 .main-grid {
+
     display: grid;
 
     grid-template-columns:
-        minmax(220px, 300px)
+        minmax(220px,300px)
         minmax(0,1fr)
-        minmax(260px, 350px);
+        minmax(260px,350px);
 
-    gap: clamp(8px, 1vh, 12px);
+    gap:
+        clamp(8px,1vh,12px);
 
     min-height: 0;
 }
 
 .rail {
+
     display: flex;
+
     flex-direction: column;
 
-    gap: clamp(8px, 1vh, 12px);
+    gap:
+        clamp(8px,1vh,12px);
 
     min-height: 0;
 }
@@ -605,14 +829,19 @@ body {
 ========================================================= */
 
 .aqi-card {
+
     flex: 1 1 auto;
+
     min-height: 0;
 
-    padding: clamp(12px,1.6vh,20px);
+    padding:
+        clamp(12px,1.6vh,20px);
 
-    border-radius: var(--r-xl);
+    border-radius:
+        var(--r-xl);
 
     display: flex;
+
     flex-direction: column;
 
     animation:
@@ -622,57 +851,97 @@ body {
 }
 
 @keyframes fadeUp {
+
     from {
+
         opacity: 0;
-        transform: translateY(16px);
+
+        transform:
+            translateY(16px);
     }
 
     to {
+
         opacity: 1;
-        transform: translateY(0);
+
+        transform:
+            translateY(0);
     }
 }
 
 .card-top {
+
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        flex-start;
 }
 
 .section-kicker {
-    font-size: clamp(.52rem,.8vh,.62rem);
-    text-transform: uppercase;
-    letter-spacing: 1.4px;
-    color: var(--muted);
+
+    font-size:
+        clamp(.52rem,.8vh,.62rem);
+
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        1.4px;
+
+    color:
+        var(--muted);
+
     font-weight: 700;
 }
 
 .section-title {
+
     margin-top: 4px;
-    font-family: var(--font-display);
-    font-size: clamp(.75rem,1.05vh,.92rem);
+
+    font-family:
+        var(--font-display);
+
+    font-size:
+        clamp(.75rem,1.05vh,.92rem);
+
     font-weight: 700;
 }
 
 .device-id {
-    padding: 5px 9px;
-    border-radius: 999px;
 
-    font-size: clamp(.5rem,.75vh,.6rem);
+    padding:
+        5px 9px;
 
-    color: var(--cyan);
+    border-radius:
+        999px;
 
-    border: 1px solid rgba(45,217,236,.2);
-    background: rgba(45,217,236,.07);
+    font-size:
+        clamp(.5rem,.75vh,.6rem);
 
-    font-family: var(--font-mono);
+    color:
+        var(--cyan);
+
+    border:
+        1px solid rgba(45,217,236,.2);
+
+    background:
+        rgba(45,217,236,.07);
+
+    font-family:
+        var(--font-mono);
 }
 
 .gauge-zone {
+
     flex: 1 1 auto;
 
     display: flex;
+
     align-items: center;
+
     justify-content: center;
 
     min-height: 0;
@@ -681,8 +950,12 @@ body {
 }
 
 .gauge {
-    width: min(15vw, 30vh, 210px);
-    height: min(15vw, 30vh, 210px);
+
+    width:
+        min(15vw,30vh,210px);
+
+    height:
+        min(15vw,30vh,210px);
 
     aspect-ratio: 1;
 
@@ -691,14 +964,16 @@ body {
     position: relative;
 
     display: grid;
+
     place-items: center;
 
     background:
         conic-gradient(
             from -90deg,
-            var(--gauge-color, var(--green))
-            var(--gauge-angle, 0deg),
-            rgba(255,255,255,.05) 0deg
+            var(--gauge-color,var(--green))
+            var(--gauge-angle,0deg),
+            rgba(255,255,255,.05)
+            0deg
         );
 
     transition:
@@ -707,25 +982,33 @@ body {
 }
 
 .gauge::before {
+
     content: "";
 
     position: absolute;
+
     inset: 11%;
 
     border-radius: 50%;
 
-    background: rgba(3,6,12,.94);
+    background:
+        rgba(3,6,12,.94);
 
-    border: 1px solid rgba(255,255,255,.11);
+    border:
+        1px solid
+        rgba(255,255,255,.11);
 
     box-shadow:
-        inset 0 0 40px rgba(255,255,255,.03);
+        inset 0 0 40px
+        rgba(255,255,255,.03);
 }
 
 .gauge::after {
+
     content: "";
 
     position: absolute;
+
     inset: -6%;
 
     border-radius: 50%;
@@ -745,42 +1028,55 @@ body {
 }
 
 @keyframes sweep {
+
     to {
-        transform: rotate(360deg);
+        transform:
+            rotate(360deg);
     }
 }
 
 .gauge-ring-dash {
+
     position: absolute;
+
     inset: -3%;
 
     border-radius: 50%;
 
-    border: 1px dashed rgba(255,255,255,.08);
+    border:
+        1px dashed
+        rgba(255,255,255,.08);
 
     animation:
         ringRotate 26s linear infinite reverse;
 }
 
 @keyframes ringRotate {
+
     to {
-        transform: rotate(360deg);
+        transform:
+            rotate(360deg);
     }
 }
 
 .gauge-content {
+
     z-index: 3;
+
     text-align: center;
 }
 
 .aqi-number {
-    font-family: var(--font-mono);
 
-    font-size: clamp(
-        1.9rem,
-        4.4vh,
-        3.4rem
-    );
+    font-family:
+        var(--font-mono);
+
+    font-size:
+        clamp(
+            1.9rem,
+            4.4vh,
+            3.4rem
+        );
 
     font-weight: 800;
 
@@ -790,31 +1086,41 @@ body {
         color .5s var(--ease),
         text-shadow .5s var(--ease);
 
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric:
+        tabular-nums;
 }
 
 .aqi-caption {
+
     margin-top: 6px;
 
-    font-size: clamp(.45rem,.66vh,.56rem);
+    font-size:
+        clamp(.45rem,.66vh,.56rem);
 
-    color: var(--muted);
+    color:
+        var(--muted);
 
-    text-transform: uppercase;
+    text-transform:
+        uppercase;
 
-    letter-spacing: 1.1px;
+    letter-spacing:
+        1.1px;
 }
 
 .aqi-status {
+
     text-align: center;
 
-    font-family: var(--font-display);
+    font-family:
+        var(--font-display);
 
-    font-size: clamp(.85rem,1.3vh,1.1rem);
+    font-size:
+        clamp(.85rem,1.3vh,1.1rem);
 
     font-weight: 700;
 
-    letter-spacing: 1.2px;
+    letter-spacing:
+        1.2px;
 
     transition:
         color .4s var(--ease);
@@ -823,143 +1129,179 @@ body {
 }
 
 .aqi-description {
+
     text-align: center;
 
     margin-top: 4px;
 
-    color: var(--muted);
+    color:
+        var(--muted);
 
-    font-size: clamp(.58rem,.85vh,.68rem);
+    font-size:
+        clamp(.58rem,.85vh,.68rem);
 
-    line-height: 1.45;
+    line-height:
+        1.45;
 
     flex-shrink: 0;
 }
 
 .dominant-box {
-    margin-top: clamp(8px,1.2vh,14px);
 
-    padding: clamp(8px,1.2vh,12px);
+    margin-top:
+        clamp(8px,1.2vh,14px);
+
+    padding:
+        clamp(8px,1.2vh,12px);
 
     border-radius: 13px;
 
     flex-shrink: 0;
 
-    background: rgba(255,255,255,.035);
+    background:
+        rgba(255,255,255,.035);
 
-    border: 1px solid rgba(255,255,255,.08);
+    border:
+        1px solid
+        rgba(255,255,255,.08);
 
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
 }
 
 .dominant-label {
-    color: var(--muted);
 
-    font-size: clamp(.5rem,.72vh,.58rem);
+    color:
+        var(--muted);
 
-    text-transform: uppercase;
+    font-size:
+        clamp(.5rem,.72vh,.58rem);
 
-    letter-spacing: 1.1px;
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        1.1px;
 
     font-weight: 700;
 }
 
 .dominant-value {
-    font-family: var(--font-mono);
 
-    font-size: clamp(.72rem,1.05vh,.9rem);
+    font-family:
+        var(--font-mono);
+
+    font-size:
+        clamp(.72rem,1.05vh,.9rem);
 
     font-weight: 800;
 
-    color: var(--cyan);
+    color:
+        var(--cyan);
 }
 
 .env-grid {
+
     display: grid;
 
-    grid-template-columns: repeat(2,1fr);
+    grid-template-columns:
+        repeat(2,1fr);
 
     gap: 8px;
 
-    margin-top: clamp(8px,1.2vh,12px);
+    margin-top:
+        clamp(8px,1.2vh,12px);
 
     flex-shrink: 0;
 }
 
 .env-card {
-    padding: clamp(7px,1vh,11px);
+
+    padding:
+        clamp(7px,1vh,11px);
 
     border-radius: 12px;
 
-    background: rgba(255,255,255,.03);
+    background:
+        rgba(255,255,255,.03);
 
-    border: 1px solid rgba(255,255,255,.07);
-
-    transition:
-        background .3s var(--ease);
-}
-
-.env-card:active {
-    background: rgba(255,255,255,.06);
+    border:
+        1px solid
+        rgba(255,255,255,.07);
 }
 
 .env-label {
-    color: var(--muted);
 
-    text-transform: uppercase;
+    color:
+        var(--muted);
+
+    text-transform:
+        uppercase;
 
     letter-spacing: .9px;
 
-    font-size: clamp(.48rem,.68vh,.55rem);
+    font-size:
+        clamp(.48rem,.68vh,.55rem);
 
     font-weight: 700;
 }
 
 .env-value {
+
     margin-top: 4px;
 
-    font-size: clamp(.9rem,1.5vh,1.25rem);
+    font-size:
+        clamp(.9rem,1.5vh,1.25rem);
 
-    font-family: var(--font-mono);
+    font-family:
+        var(--font-mono);
 
     font-weight: 800;
 }
 
 /* =========================================================
-   HEALTH CARD
+   HEALTH
 ========================================================= */
 
 .health-card {
+
     flex-shrink: 0;
 
-    padding: clamp(10px,1.4vh,16px);
+    padding:
+        clamp(10px,1.4vh,16px);
 
-    border-radius: var(--r-lg);
-
-    animation:
-        fadeUp .7s var(--ease) both;
-
-    animation-delay: .08s;
+    border-radius:
+        var(--r-lg);
 }
 
 .health-title {
-    font-family: var(--font-display);
 
-    font-size: clamp(.6rem,.85vh,.7rem);
+    font-family:
+        var(--font-display);
+
+    font-size:
+        clamp(.6rem,.85vh,.7rem);
 
     font-weight: 700;
 
     letter-spacing: .8px;
 
-    margin-bottom: clamp(6px,1vh,10px);
+    margin-bottom:
+        clamp(6px,1vh,10px);
 }
 
 .health-row {
+
     display: flex;
 
-    justify-content: space-between;
+    justify-content:
+        space-between;
+
     align-items: center;
 
     padding:
@@ -969,9 +1311,11 @@ body {
     border-bottom:
         1px solid rgba(255,255,255,.05);
 
-    font-size: clamp(.56rem,.78vh,.64rem);
+    font-size:
+        clamp(.56rem,.78vh,.64rem);
 
-    color: var(--muted);
+    color:
+        var(--muted);
 }
 
 .health-row:last-child {
@@ -979,44 +1323,50 @@ body {
 }
 
 .health-state {
+
     display: flex;
+
     align-items: center;
+
     gap: 6px;
 
-    color: var(--green);
+    color:
+        var(--green);
 
     font-weight: 700;
-
-    transition:
-        color .4s var(--ease);
 }
 
 .health-dot {
+
     width: 5px;
+
     height: 5px;
 
     border-radius: 50%;
 
-    background: var(--green);
+    background:
+        var(--green);
 
     box-shadow:
         0 0 7px currentColor;
 }
 
 /* =========================================================
-   CENTER
+   SENSOR GRID
 ========================================================= */
 
 .sensor-grid {
+
     display: grid;
 
     grid-template-columns:
         repeat(3,minmax(0,1fr));
 
     grid-template-rows:
-        repeat(2, 1fr);
+        repeat(2,1fr);
 
-    gap: clamp(8px,1vh,12px);
+    gap:
+        clamp(8px,1vh,12px);
 
     flex: 1.05 1 0;
 
@@ -1024,13 +1374,19 @@ body {
 }
 
 .sensor-card {
-    padding: clamp(9px,1.3vh,15px);
 
-    border-radius: var(--r-lg);
+    padding:
+        clamp(9px,1.3vh,15px);
+
+    border-radius:
+        var(--r-lg);
 
     display: flex;
+
     flex-direction: column;
-    justify-content: space-between;
+
+    justify-content:
+        space-between;
 
     min-height: 0;
 
@@ -1063,61 +1419,91 @@ body {
 }
 
 @keyframes cardIn {
+
     from {
+
         opacity: 0;
-        transform: translateY(14px);
+
+        transform:
+            translateY(14px);
     }
 
     to {
+
         opacity: 1;
-        transform: translateY(0);
+
+        transform:
+            translateY(0);
     }
 }
 
 .sensor-header {
+
     display: flex;
-    justify-content: space-between;
+
+    justify-content:
+        space-between;
+
     gap: 6px;
-    align-items: flex-start;
+
+    align-items:
+        flex-start;
 }
 
 .sensor-name {
-    font-size: clamp(.56rem,.76vh,.63rem);
+
+    font-size:
+        clamp(.56rem,.76vh,.63rem);
+
     font-weight: 700;
+
     letter-spacing: .5px;
+
     line-height: 1.3;
 }
 
 .sensor-type {
-    font-size: clamp(.46rem,.62vh,.52rem);
 
-    color: var(--cyan);
+    font-size:
+        clamp(.46rem,.62vh,.52rem);
+
+    color:
+        var(--cyan);
 
     border:
-        1px solid rgba(45,217,236,.18);
+        1px solid
+        rgba(45,217,236,.18);
 
     background:
         rgba(45,217,236,.06);
 
-    padding: 3px 7px;
+    padding:
+        3px 7px;
 
-    border-radius: 999px;
+    border-radius:
+        999px;
 
     white-space: nowrap;
 
-    font-family: var(--font-mono);
+    font-family:
+        var(--font-mono);
 
     flex-shrink: 0;
 }
 
 .sensor-value {
+
     display: flex;
+
     align-items: baseline;
+
     gap: 4px;
 }
 
 .sensor-number {
-    font-family: var(--font-mono);
+
+    font-family:
+        var(--font-mono);
 
     font-size:
         clamp(
@@ -1130,24 +1516,29 @@ body {
 
     letter-spacing: -.5px;
 
-    font-variant-numeric: tabular-nums;
-
-    transition:
-        color .4s var(--ease);
+    font-variant-numeric:
+        tabular-nums;
 }
 
 .sensor-unit {
-    font-size: clamp(.58rem,.76vh,.65rem);
-    color: var(--muted);
+
+    font-size:
+        clamp(.58rem,.76vh,.65rem);
+
+    color:
+        var(--muted);
 }
 
 .meter-track {
+
     width: 100%;
+
     height: 4px;
 
     border-radius: 99px;
 
-    background: rgba(255,255,255,.05);
+    background:
+        rgba(255,255,255,.05);
 
     overflow: hidden;
 
@@ -1155,12 +1546,15 @@ body {
 }
 
 .meter-fill {
+
     height: 100%;
+
     width: 0%;
 
     border-radius: inherit;
 
-    background: var(--green);
+    background:
+        var(--green);
 
     box-shadow:
         0 0 12px currentColor;
@@ -1171,21 +1565,32 @@ body {
 }
 
 .meter-head {
+
     display: flex;
-    justify-content: space-between;
 
-    font-size: clamp(.46rem,.6vh,.52rem);
+    justify-content:
+        space-between;
 
-    color: var(--muted);
+    font-size:
+        clamp(.46rem,.6vh,.52rem);
+
+    color:
+        var(--muted);
 }
 
+/* =========================================================
+   TELEMETRY
+========================================================= */
+
 .telemetry-row {
+
     display: grid;
 
     grid-template-columns:
         1fr 1.7fr;
 
-    gap: clamp(8px,1vh,12px);
+    gap:
+        clamp(8px,1vh,12px);
 
     flex: 1 1 0;
 
@@ -1193,20 +1598,27 @@ body {
 }
 
 .status-card {
-    padding: clamp(10px,1.3vh,15px);
 
-    border-radius: var(--r-lg);
+    padding:
+        clamp(10px,1.3vh,15px);
+
+    border-radius:
+        var(--r-lg);
 
     display: flex;
+
     flex-direction: column;
 
     min-height: 0;
 }
 
 .status-title {
-    font-family: var(--font-display);
 
-    font-size: clamp(.62rem,.85vh,.72rem);
+    font-family:
+        var(--font-display);
+
+    font-size:
+        clamp(.62rem,.85vh,.72rem);
 
     font-weight: 700;
 
@@ -1216,36 +1628,47 @@ body {
 }
 
 .status-sub {
+
     margin-top: 2px;
 
-    color: var(--muted);
+    color:
+        var(--muted);
 
-    font-size: clamp(.5rem,.68vh,.58rem);
+    font-size:
+        clamp(.5rem,.68vh,.58rem);
 
     flex-shrink: 0;
 }
 
 .status-items {
+
     flex: 1;
 
     overflow: hidden;
 
     display: flex;
+
     flex-direction: column;
 
-    justify-content: space-evenly;
+    justify-content:
+        space-evenly;
 }
 
 .status-item {
+
     display: flex;
 
-    justify-content: space-between;
+    justify-content:
+        space-between;
+
     align-items: center;
 
-    font-size: clamp(.54rem,.72vh,.62rem);
+    font-size:
+        clamp(.54rem,.72vh,.62rem);
 
     border-bottom:
-        1px solid rgba(255,255,255,.045);
+        1px solid
+        rgba(255,255,255,.045);
 
     padding: 2px 0;
 
@@ -1257,48 +1680,65 @@ body {
 }
 
 .status-label {
-    color: var(--muted);
+
+    color:
+        var(--muted);
 }
 
 .status-value {
-    font-family: var(--font-mono);
+
+    font-family:
+        var(--font-mono);
 
     font-weight: 700;
 
-    transition:
-        color .4s var(--ease);
-
-    text-align: right;
+    text-align:
+        right;
 }
 
 .value-good {
-    color: var(--green);
+    color:
+        var(--green);
 }
 
 .value-warn {
-    color: var(--yellow);
+    color:
+        var(--yellow);
 }
 
 .value-off {
-    color: var(--red);
+    color:
+        var(--red);
 }
 
-.chart-card {
-    padding: clamp(10px,1.3vh,15px);
+/* =========================================================
+   CHART
+========================================================= */
 
-    border-radius: var(--r-lg);
+.chart-card {
+
+    padding:
+        clamp(10px,1.3vh,15px);
+
+    border-radius:
+        var(--r-lg);
 
     display: flex;
+
     flex-direction: column;
 
     min-height: 0;
 }
 
 .chart-heading {
+
     display: flex;
 
-    justify-content: space-between;
-    align-items: center;
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
 
     gap: 8px;
 
@@ -1308,9 +1748,12 @@ body {
 }
 
 .chart-title {
-    font-family: var(--font-display);
 
-    font-size: clamp(.62rem,.85vh,.72rem);
+    font-family:
+        var(--font-display);
+
+    font-size:
+        clamp(.62rem,.85vh,.72rem);
 
     font-weight: 700;
 
@@ -1318,30 +1761,41 @@ body {
 }
 
 .chart-caption {
-    color: var(--muted);
 
-    font-size: clamp(.48rem,.65vh,.56rem);
+    color:
+        var(--muted);
+
+    font-size:
+        clamp(.48rem,.65vh,.56rem);
 }
 
 .chart-window {
-    padding: 4px 9px;
+
+    padding:
+        4px 9px;
 
     border:
-        1px solid rgba(255,255,255,.08);
+        1px solid
+        rgba(255,255,255,.08);
 
     background:
         rgba(255,255,255,.032);
 
-    border-radius: 999px;
+    border-radius:
+        999px;
 
-    font-size: clamp(.46rem,.58vh,.52rem);
+    font-size:
+        clamp(.46rem,.58vh,.52rem);
 
-    color: var(--cyan);
+    color:
+        var(--cyan);
 
-    font-family: var(--font-mono);
+    font-family:
+        var(--font-mono);
 }
 
 .chart-container {
+
     position: relative;
 
     flex: 1;
@@ -1350,27 +1804,35 @@ body {
 }
 
 /* =========================================================
-   RIGHT RAIL
+   LOCATION
 ========================================================= */
 
 .location-card {
+
     flex: 1.18 1 0;
 
     min-height: 0;
 
-    padding: clamp(10px,1.3vh,15px);
+    padding:
+        clamp(10px,1.3vh,15px);
 
-    border-radius: var(--r-lg);
+    border-radius:
+        var(--r-lg);
 
     display: flex;
+
     flex-direction: column;
 }
 
 .location-heading {
+
     display: flex;
 
-    justify-content: space-between;
-    align-items: center;
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
 
     gap: 8px;
 
@@ -1378,9 +1840,12 @@ body {
 }
 
 .location-title {
-    font-family: var(--font-display);
 
-    font-size: clamp(.62rem,.85vh,.72rem);
+    font-family:
+        var(--font-display);
+
+    font-size:
+        clamp(.62rem,.85vh,.72rem);
 
     font-weight: 700;
 
@@ -1388,37 +1853,45 @@ body {
 }
 
 .location-sub {
+
     margin-top: 2px;
 
-    color: var(--muted);
+    color:
+        var(--muted);
 
-    font-size: clamp(.48rem,.64vh,.55rem);
+    font-size:
+        clamp(.48rem,.64vh,.55rem);
 }
 
 .location-state {
-    padding: 4px 9px;
 
-    border-radius: 999px;
+    padding:
+        4px 9px;
 
-    font-size: clamp(.46rem,.58vh,.52rem);
+    border-radius:
+        999px;
 
-    color: var(--yellow);
+    font-size:
+        clamp(.46rem,.58vh,.52rem);
+
+    color:
+        var(--yellow);
 
     border:
-        1px solid rgba(246,196,83,.16);
+        1px solid
+        rgba(246,196,83,.16);
 
     background:
         rgba(246,196,83,.05);
 
-    font-family: var(--font-mono);
-
-    transition:
-        all .4s var(--ease);
+    font-family:
+        var(--font-mono);
 
     white-space: nowrap;
 }
 
 .map-wrap {
+
     position: relative;
 
     flex: 1;
@@ -1427,25 +1900,32 @@ body {
 
     margin-top: 10px;
 
-    border-radius: 14px;
+    border-radius:
+        14px;
 
     overflow: hidden;
 
     border:
-        1px solid rgba(255,255,255,.11);
+        1px solid
+        rgba(255,255,255,.11);
 
     box-shadow:
-        inset 0 0 40px rgba(0,0,0,.18);
+        inset 0 0 40px
+        rgba(0,0,0,.18);
 }
 
 #device-map {
+
     width: 100%;
+
     height: 100%;
 
-    background: #060a15;
+    background:
+        #060a15;
 }
 
 .accuracy-badge {
+
     position: absolute;
 
     top: 8px;
@@ -1453,44 +1933,52 @@ body {
 
     z-index: 500;
 
-    padding: 5px 9px;
+    padding:
+        5px 9px;
 
-    border-radius: 999px;
+    border-radius:
+        999px;
 
     background:
         rgba(6,10,21,.75);
 
-    backdrop-filter: blur(12px);
+    backdrop-filter:
+        blur(12px);
 
     border:
-        1px solid rgba(255,255,255,.13);
+        1px solid
+        rgba(255,255,255,.13);
 
     font-size:
         clamp(.46rem,.58vh,.52rem);
 
-    font-family: var(--font-mono);
+    font-family:
+        var(--font-mono);
 
-    color: var(--cyan);
+    color:
+        var(--cyan);
 
     display: none;
 
-    align-items: center;
+    align-items:
+        center;
 
     gap: 5px;
 }
 
 .accuracy-badge.show {
     display: inline-flex;
-
-    animation:
-        fadeUp .4s var(--ease) both;
 }
 
 .location-footer {
+
     display: flex;
 
-    justify-content: space-between;
-    align-items: center;
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
 
     gap: 8px;
 
@@ -1500,9 +1988,12 @@ body {
 }
 
 .location-name {
-    color: var(--text);
 
-    font-size: clamp(.56rem,.72vh,.63rem);
+    color:
+        var(--text);
+
+    font-size:
+        clamp(.56rem,.72vh,.63rem);
 
     line-height: 1.4;
 
@@ -1520,14 +2011,19 @@ body {
 }
 
 .maps-button {
+
     display: inline-flex;
 
-    align-items: center;
-    justify-content: center;
+    align-items:
+        center;
+
+    justify-content:
+        center;
 
     gap: 5px;
 
-    padding: 7px 10px;
+    padding:
+        7px 10px;
 
     border-radius: 9px;
 
@@ -1537,11 +2033,14 @@ body {
         rgba(45,217,236,.08);
 
     border:
-        1px solid rgba(45,217,236,.22);
+        1px solid
+        rgba(45,217,236,.22);
 
-    color: var(--cyan);
+    color:
+        var(--cyan);
 
-    text-decoration: none;
+    text-decoration:
+        none;
 
     font-size:
         clamp(.5rem,.62vh,.56rem);
@@ -1549,26 +2048,23 @@ body {
     font-weight: 750;
 
     white-space: nowrap;
-
-    transition:
-        all .25s var(--ease);
 }
 
-.maps-button:hover {
-    background:
-        rgba(45,217,236,.18);
-
-    transform: translateY(-1px);
-}
+/* =========================================================
+   MAP PIN
+========================================================= */
 
 .device-pin {
+
     width: 22px;
+
     height: 22px;
 
     position: relative;
 }
 
 .device-pin .pin-core {
+
     position: absolute;
 
     top: 50%;
@@ -1580,17 +2076,22 @@ body {
     transform:
         translate(-50%,-50%);
 
-    background: var(--cyan);
+    background:
+        var(--cyan);
 
     border-radius: 50%;
 
-    border: 2px solid #03060c;
+    border:
+        2px solid
+        #03060c;
 
     box-shadow:
-        0 0 12px rgba(45,217,236,.85);
+        0 0 12px
+        rgba(45,217,236,.85);
 }
 
 .device-pin .pin-ring {
+
     position: absolute;
 
     top: 50%;
@@ -1605,14 +2106,17 @@ body {
     border-radius: 50%;
 
     border:
-        2px solid rgba(45,217,236,.55);
+        2px solid
+        rgba(45,217,236,.55);
 
     animation:
         pinPulse 2.2s ease-out infinite;
 }
 
 @keyframes pinPulse {
+
     0% {
+
         transform:
             translate(-50%,-50%)
             scale(.4);
@@ -1621,6 +2125,7 @@ body {
     }
 
     100% {
+
         transform:
             translate(-50%,-50%)
             scale(2.2);
@@ -1634,30 +2139,39 @@ body {
 ========================================================= */
 
 .advice-card {
+
     flex-shrink: 0;
 
-    padding: clamp(9px,1.2vh,13px);
+    padding:
+        clamp(9px,1.2vh,13px);
 
-    border-radius: var(--r-lg);
+    border-radius:
+        var(--r-lg);
 }
 
 .advice-title {
+
     font-size:
         clamp(.5rem,.68vh,.58rem);
 
-    text-transform: uppercase;
+    text-transform:
+        uppercase;
 
-    letter-spacing: 1.2px;
+    letter-spacing:
+        1.2px;
 
-    color: var(--muted);
+    color:
+        var(--muted);
 
     font-weight: 700;
 }
 
 #advice-list {
+
     margin-top: 8px;
 
-    max-height: 9.5vh;
+    max-height:
+        9.5vh;
 
     overflow-y: auto;
 
@@ -1667,77 +2181,79 @@ body {
 
     gap: 6px;
 
-    scrollbar-width: thin;
-}
-
-#advice-list::-webkit-scrollbar {
-    width: 4px;
-}
-
-#advice-list::-webkit-scrollbar-thumb {
-    background:
-        rgba(255,255,255,.12);
-
-    border-radius: 4px;
+    scrollbar-width:
+        thin;
 }
 
 .advice-item {
-    padding: 7px 9px;
 
-    border-radius: 10px;
+    padding:
+        7px 9px;
+
+    border-radius:
+        10px;
 
     background:
         rgba(255,255,255,.032);
 
     border:
-        1px solid rgba(255,255,255,.065);
+        1px solid
+        rgba(255,255,255,.065);
 
-    color: var(--text);
+    color:
+        var(--text);
 
     font-size:
         clamp(.54rem,.7vh,.6rem);
 
-    line-height: 1.4;
-
-    animation:
-        cardIn .4s var(--ease) both;
+    line-height:
+        1.4;
 }
 
 /* =========================================================
-   FUTURE FORECAST
+   FORECAST
 ========================================================= */
 
 .forecast-card {
+
     flex-shrink: 0;
 
     padding:
         clamp(9px,1.2vh,13px);
 
-    border-radius: var(--r-lg);
+    border-radius:
+        var(--r-lg);
 }
 
 .forecast-location {
+
     margin-top: 4px;
 
-    color: var(--muted);
+    color:
+        var(--muted);
 
     font-size:
         clamp(.46rem,.62vh,.54rem);
 
-    font-family: var(--font-mono);
+    font-family:
+        var(--font-mono);
 
-    white-space: nowrap;
+    white-space:
+        nowrap;
 
-    overflow: hidden;
+    overflow:
+        hidden;
 
-    text-overflow: ellipsis;
+    text-overflow:
+        ellipsis;
 }
 
 .forecast-grid {
+
     display: grid;
 
     grid-template-columns:
-        repeat(3, 1fr);
+        repeat(3,1fr);
 
     gap: 6px;
 
@@ -1745,15 +2261,19 @@ body {
 }
 
 .forecast-item {
-    padding: 8px 5px;
 
-    border-radius: 10px;
+    padding:
+        8px 5px;
+
+    border-radius:
+        10px;
 
     background:
         rgba(255,255,255,.032);
 
     border:
-        1px solid rgba(255,255,255,.065);
+        1px solid
+        rgba(255,255,255,.065);
 
     text-align: center;
 
@@ -1761,18 +2281,24 @@ body {
 }
 
 .forecast-time {
-    color: var(--muted);
+
+    color:
+        var(--muted);
 
     font-size:
         clamp(.42rem,.56vh,.48rem);
 
-    letter-spacing: .7px;
+    letter-spacing:
+        .7px;
 
-    font-weight: 700;
+    font-weight:
+        700;
 }
 
 .forecast-aqi {
-    font-family: var(--font-mono);
+
+    font-family:
+        var(--font-mono);
 
     font-size:
         clamp(.92rem,1.65vh,1.2rem);
@@ -1783,29 +2309,37 @@ body {
 }
 
 .forecast-category {
-    color: var(--muted);
+
+    color:
+        var(--muted);
 
     font-size:
         clamp(.42rem,.55vh,.48rem);
 
     margin-top: 2px;
 
-    white-space: nowrap;
+    white-space:
+        nowrap;
 
-    overflow: hidden;
+    overflow:
+        hidden;
 
-    text-overflow: ellipsis;
+    text-overflow:
+        ellipsis;
 }
 
 .forecast-source {
+
     margin-top: 7px;
 
-    color: var(--dim);
+    color:
+        var(--dim);
 
     font-size:
         clamp(.42rem,.52vh,.48rem);
 
-    text-align: right;
+    text-align:
+        right;
 }
 
 /* =========================================================
@@ -1813,21 +2347,25 @@ body {
 ========================================================= */
 
 .alert-strip {
+
     flex-shrink: 0;
 
     padding:
         clamp(9px,1.2vh,13px);
 
-    border-radius: var(--r-lg);
+    border-radius:
+        var(--r-lg);
 
     display: flex;
 
-    align-items: center;
+    align-items:
+        center;
 
     gap: 11px;
 
     border:
-        1px solid rgba(56,189,248,.12);
+        1px solid
+        rgba(56,189,248,.12);
 
     background:
         linear-gradient(
@@ -1835,45 +2373,46 @@ body {
             rgba(56,189,248,.08),
             rgba(167,139,250,.05)
         );
-
-    transition:
-        all .5s var(--ease);
 }
 
 .alert-icon {
+
     width:
         clamp(24px,3vh,30px);
 
     height:
         clamp(24px,3vh,30px);
 
-    border-radius: 10px;
+    border-radius:
+        10px;
 
     display: grid;
 
-    place-items: center;
+    place-items:
+        center;
 
     background:
         rgba(56,189,248,.09);
 
     border:
-        1px solid rgba(56,189,248,.16);
+        1px solid
+        rgba(56,189,248,.16);
 
-    color: var(--cyan);
+    color:
+        var(--cyan);
 
     flex-shrink: 0;
-
-    transition:
-        all .5s var(--ease);
 }
 
 .alert-text {
+
     flex: 1;
 
     min-width: 0;
 }
 
 .alert-main {
+
     font-size:
         clamp(.6rem,.78vh,.68rem);
 
@@ -1883,12 +2422,14 @@ body {
 }
 
 .alert-sub {
+
     margin-top: 2px;
 
     font-size:
         clamp(.5rem,.62vh,.55rem);
 
-    color: var(--muted);
+    color:
+        var(--muted);
 
     overflow: hidden;
 
@@ -1902,38 +2443,51 @@ body {
 ========================================================= */
 
 .leaflet-control-zoom a {
+
     background:
         rgba(8,14,26,.82) !important;
 
-    color: #fff !important;
+    color:
+        #fff !important;
 
     border-color:
         rgba(255,255,255,.13) !important;
 }
 
 .leaflet-control-zoom {
-    border-radius: 10px !important;
+
+    border-radius:
+        10px !important;
+
     overflow: hidden;
 }
 
 .leaflet-control-attribution {
+
     background:
         rgba(0,0,0,.55) !important;
 
     color:
         rgba(255,255,255,.6) !important;
 
-    font-size: 8px !important;
+    font-size:
+        8px !important;
 }
 
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
-    background: #08111f;
-    color: #fff;
+
+    background:
+        #08111f;
+
+    color:
+        #fff;
 }
 
 .leaflet-popup-content {
-    font-family: var(--font-body);
+
+    font-family:
+        var(--font-body);
 
     font-size: 11px;
 
@@ -1941,17 +2495,20 @@ body {
 }
 
 .leaflet-popup-content-wrapper {
-    border-radius: 12px;
+
+    border-radius:
+        12px;
 
     border:
-        1px solid rgba(255,255,255,.1);
+        1px solid
+        rgba(255,255,255,.1);
 }
 
 /* =========================================================
    RESPONSIVE
 ========================================================= */
 
-@media (max-width: 1000px), (max-height: 640px) {
+@media (max-width:1000px), (max-height:640px) {
 
     html,
     body {
@@ -1959,6 +2516,7 @@ body {
     }
 
     .app {
+
         height: auto;
 
         min-height: 100dvh;
@@ -1971,6 +2529,7 @@ body {
     }
 
     .main-grid {
+
         display: flex;
 
         flex-direction: column;
@@ -1981,10 +2540,12 @@ body {
     }
 
     .sensor-grid {
+
         grid-template-rows: none;
     }
 
     .telemetry-row {
+
         grid-template-columns: 1fr;
     }
 
@@ -1992,21 +2553,23 @@ body {
     .location-card,
     .status-card,
     .chart-card {
+
         min-height: 260px;
     }
 
     .gauge {
+
         width: 180px;
         height: 180px;
     }
 
     #advice-list {
+
         max-height: 160px;
     }
 }
 
 </style>
-
 </head>
 
 <body>
@@ -2015,10 +2578,13 @@ body {
 <div class="grain"></div>
 
 <div class="atmosphere">
+
     <div class="cloud cloud-a"></div>
     <div class="cloud cloud-b"></div>
     <div class="cloud cloud-c"></div>
+
     <div class="treeline"></div>
+
 </div>
 
 <div class="app">
@@ -2029,86 +2595,91 @@ body {
 
 <header class="header glass">
 
-```
-<div class="brand">
+    <div class="brand">
 
-    <div class="brand-icon">
-        ◉
-    </div>
-
-    <div>
-
-        <div class="brand-name">
-            AEROSENSE AI
+        <div class="brand-icon">
+            ◉
         </div>
 
-        <div class="brand-sub">
-            INTELLIGENT AIR QUALITY MONITORING PLATFORM
+        <div>
+
+            <div class="brand-name">
+                AEROSENSE AI
+            </div>
+
+            <div class="brand-sub">
+                INTELLIGENT AIR QUALITY MONITORING PLATFORM
+            </div>
+
         </div>
 
     </div>
 
-</div>
 
-<div class="header-mid">
+    <div class="header-mid">
 
-    <div class="command-chip">
-        DEVICE:
-        <strong>AQI-001</strong>
-    </div>
+        <div class="command-chip">
+            DEVICE:
+            <strong>AQI-001</strong>
+        </div>
 
-    <div class="command-chip">
-        NODE:
-        <strong>ESP32-S3</strong>
-    </div>
+        <div class="command-chip">
+            NODE:
+            <strong>ESP32-S3</strong>
+        </div>
 
-    <div class="command-chip cloud-ok">
-        CLOUD:
-        <strong>RENDER</strong>
-    </div>
+        <div class="command-chip cloud-ok">
+            CLOUD:
+            <strong>RENDER</strong>
+        </div>
 
-    <div class="command-chip gps-wait">
-        GPS:
-        <strong id="gps-status">
-            WAITING
-        </strong>
-    </div>
+        <div class="command-chip gps-wait">
 
-</div>
+            GPS:
 
-<div class="header-right">
+            <strong id="gps-status">
+                WAITING
+            </strong>
 
-    <div class="status-pill">
-
-        <span
-            class="live-dot"
-            id="live-dot"
-        ></span>
-
-        <span id="connection-text">
-            SYSTEM ONLINE
-        </span>
+        </div>
 
     </div>
 
-    <div class="sync">
 
-        <span id="last-sync">
-            WAITING...
-        </span>
+    <div class="header-right">
+
+        <div class="status-pill">
+
+            <span
+                class="live-dot"
+                id="live-dot"
+            ></span>
+
+            <span id="connection-text">
+                SYSTEM ONLINE
+            </span>
+
+        </div>
+
+        <div class="sync">
+
+            <span id="last-sync">
+                WAITING...
+            </span>
+
+        </div>
 
     </div>
-
-</div>
-```
 
 </header>
 
+
 <!-- =====================================================
-     MAIN
+     MAIN GRID
 ===================================================== -->
 
 <div class="main-grid">
+
 
 <!-- =====================================================
      LEFT RAIL
@@ -2116,234 +2687,236 @@ body {
 
 <div class="rail">
 
-```
-<!-- PRESENT AQI -->
 
-<section class="aqi-card glass glass-tilt">
+    <!-- PRESENT AQI -->
 
-    <div class="card-top">
+    <section class="aqi-card glass glass-tilt">
 
-        <div>
+        <div class="card-top">
 
-            <div class="section-kicker">
-                Air Quality Intelligence
+            <div>
+
+                <div class="section-kicker">
+                    Air Quality Intelligence
+                </div>
+
+                <div class="section-title">
+                    Current Environmental Status
+                </div>
+
             </div>
 
-            <div class="section-title">
-                Current Environmental Status
+
+            <div class="device-id">
+                AQI-001
             </div>
 
         </div>
 
-        <div class="device-id">
-            AQI-001
+
+        <div class="gauge-zone">
+
+            <div
+                class="gauge"
+                id="aqi-gauge"
+            >
+
+                <div class="gauge-ring-dash"></div>
+
+                <div class="gauge-content">
+
+                    <div
+                        class="aqi-number"
+                        id="aqi"
+                    >
+                        --
+                    </div>
+
+                    <div class="aqi-caption">
+                        PRESENT AQI • SENSOR + ML
+                    </div>
+
+                </div>
+
+            </div>
+
         </div>
 
-    </div>
-
-
-    <div class="gauge-zone">
 
         <div
-            class="gauge"
-            id="aqi-gauge"
+            class="aqi-status"
+            id="category"
         >
+            STANDBY
+        </div>
 
-            <div class="gauge-ring-dash"></div>
 
-            <div class="gauge-content">
+        <div
+            class="aqi-description"
+            id="aqi-description"
+        >
+            Awaiting environmental telemetry
+        </div>
+
+
+        <div class="dominant-box">
+
+            <div>
+
+                <div class="dominant-label">
+                    Dominant Signal
+                </div>
 
                 <div
-                    class="aqi-number"
-                    id="aqi"
+                    class="dominant-value"
+                    id="dominant"
                 >
                     --
                 </div>
 
-                <div class="aqi-caption">
-                    PRESENT AQI • SENSOR + ML
+            </div>
+
+        </div>
+
+
+        <div class="env-grid">
+
+            <div class="env-card">
+
+                <div class="env-label">
+                    Temperature
+                </div>
+
+                <div
+                    class="env-value"
+                    id="temp"
+                >
+                    --
+                </div>
+
+                <div class="env-label">
+                    °C
+                </div>
+
+            </div>
+
+
+            <div class="env-card">
+
+                <div class="env-label">
+                    Humidity
+                </div>
+
+                <div
+                    class="env-value"
+                    id="hum"
+                >
+                    --
+                </div>
+
+                <div class="env-label">
+                    % RH
                 </div>
 
             </div>
 
         </div>
 
-    </div>
+    </section>
 
 
-    <div
-        class="aqi-status"
-        id="category"
-    >
-        STANDBY
-    </div>
+    <!-- SYSTEM HEALTH -->
 
-    <div
-        class="aqi-description"
-        id="aqi-description"
-    >
-        Awaiting environmental telemetry
-    </div>
+    <section class="health-card glass glass-tilt">
 
-
-    <div class="dominant-box">
-
-        <div>
-
-            <div class="dominant-label">
-                Dominant Signal
-            </div>
-
-            <div
-                class="dominant-value"
-                id="dominant"
-            >
-                --
-            </div>
-
+        <div class="health-title">
+            SYSTEM HEALTH
         </div>
 
-    </div>
 
+        <div class="health-row">
 
-    <div class="env-grid">
+            <span>
+                ESP32-S3
+            </span>
 
-        <div class="env-card">
+            <span class="health-state">
 
-            <div class="env-label">
-                Temperature
-            </div>
+                <span class="health-dot"></span>
 
-            <div
-                class="env-value"
-                id="temp"
-            >
-                --
-            </div>
+                ONLINE
 
-            <div class="env-label">
-                °C
-            </div>
+            </span>
 
         </div>
 
 
-        <div class="env-card">
+        <div class="health-row">
 
-            <div class="env-label">
-                Humidity
-            </div>
-
-            <div
-                class="env-value"
-                id="hum"
-            >
-                --
-            </div>
-
-            <div class="env-label">
-                % RH
-            </div>
-
-        </div>
-
-    </div>
-
-</section>
-
-
-<!-- SYSTEM HEALTH -->
-
-<section class="health-card glass glass-tilt">
-
-    <div class="health-title">
-        SYSTEM HEALTH
-    </div>
-
-
-    <div class="health-row">
-
-        <span>
-            ESP32-S3
-        </span>
-
-        <span class="health-state">
-
-            <span class="health-dot"></span>
-
-            ONLINE
-
-        </span>
-
-    </div>
-
-
-    <div class="health-row">
-
-        <span>
-            SENSOR NETWORK
-        </span>
-
-        <span
-            class="health-state"
-            id="sensor-health"
-        >
-
-            <span class="health-dot"></span>
-
-            ACTIVE
-
-        </span>
-
-    </div>
-
-
-    <div class="health-row">
-
-        <span>
-            CLOUD API
-        </span>
-
-        <span
-            class="health-state"
-            id="cloud-health"
-        >
-
-            <span class="health-dot"></span>
-
-            CONNECTED
-
-        </span>
-
-    </div>
-
-
-    <div class="health-row">
-
-        <span>
-            GPS MODULE
-        </span>
-
-        <span
-            id="gps-health"
-            class="health-state"
-        >
+            <span>
+                SENSOR NETWORK
+            </span>
 
             <span
-                class="health-dot"
-                style="background:var(--yellow)"
-            ></span>
+                class="health-state"
+                id="sensor-health"
+            >
 
-            WAITING
+                <span class="health-dot"></span>
 
-        </span>
+                ACTIVE
 
-    </div>
+            </span>
 
-</section>
-```
+        </div>
+
+
+        <div class="health-row">
+
+            <span>
+                CLOUD API
+            </span>
+
+            <span
+                class="health-state"
+                id="cloud-health"
+            >
+
+                <span class="health-dot"></span>
+
+                CONNECTED
+
+            </span>
+
+        </div>
+
+
+        <div class="health-row">
+
+            <span>
+                GPS MODULE
+            </span>
+
+            <span
+                id="gps-health"
+                class="health-state"
+            >
+
+                <span
+                    class="health-dot"
+                    style="background:var(--yellow)"
+                ></span>
+
+                WAITING
+
+            </span>
+
+        </div>
+
+    </section>
 
 </div>
+
 
 <!-- =====================================================
      CENTER RAIL
@@ -2351,630 +2924,642 @@ body {
 
 <div class="rail">
 
-```
-<!-- SENSOR GRID -->
 
-<div class="sensor-grid">
+    <!-- SENSOR GRID -->
 
-
-    <!-- PM2.5 -->
-
-    <article
-        class="sensor-card glass glass-tilt"
-        id="card-pm25"
-    >
-
-        <div class="sensor-header">
-
-            <div class="sensor-name">
-                PARTICULATE MATTER PM2.5
-            </div>
-
-            <div class="sensor-type">
-                GP2Y
-            </div>
-
-        </div>
+    <div class="sensor-grid">
 
 
-        <div>
+        <!-- PM2.5 -->
 
-            <div class="sensor-value">
+        <article
+            class="sensor-card glass glass-tilt"
+            id="card-pm25"
+        >
 
-                <span
-                    class="sensor-number"
-                    id="pm25"
-                >
-                    --
-                </span>
+            <div class="sensor-header">
 
-                <span class="sensor-unit">
-                    µg/m³
-                </span>
+                <div class="sensor-name">
+                    PARTICULATE MATTER PM2.5
+                </div>
+
+                <div class="sensor-type">
+                    GP2Y
+                </div>
 
             </div>
 
-
-            <div class="meter-track">
-
-                <div
-                    class="meter-fill"
-                    id="bar-pm25"
-                ></div>
-
-            </div>
-
-
-            <div class="meter-head">
-
-                <span>
-                    EXPOSURE
-                </span>
-
-                <span>
-                    <span id="pm25-percent">
-                        0
-                    </span>%
-                </span>
-
-            </div>
-
-        </div>
-
-    </article>
-
-
-    <!-- PM10 -->
-
-    <article
-        class="sensor-card glass glass-tilt"
-        id="card-pm10"
-    >
-
-        <div class="sensor-header">
-
-            <div class="sensor-name">
-                PARTICULATE MATTER PM10
-            </div>
-
-            <div class="sensor-type">
-                EST.
-            </div>
-
-        </div>
-
-
-        <div>
-
-            <div class="sensor-value">
-
-                <span
-                    class="sensor-number"
-                    id="pm10"
-                >
-                    --
-                </span>
-
-                <span class="sensor-unit">
-                    µg/m³
-                </span>
-
-            </div>
-
-
-            <div class="meter-track">
-
-                <div
-                    class="meter-fill"
-                    id="bar-pm10"
-                ></div>
-
-            </div>
-
-
-            <div class="meter-head">
-
-                <span>
-                    EXPOSURE
-                </span>
-
-                <span>
-                    <span id="pm10-percent">
-                        0
-                    </span>%
-                </span>
-
-            </div>
-
-        </div>
-
-    </article>
-
-
-    <!-- CO -->
-
-    <article
-        class="sensor-card glass glass-tilt"
-        id="card-co"
-    >
-
-        <div class="sensor-header">
-
-            <div class="sensor-name">
-                CARBON MONOXIDE
-            </div>
-
-            <div class="sensor-type">
-                MQ-7
-            </div>
-
-        </div>
-
-
-        <div>
-
-            <div class="sensor-value">
-
-                <span
-                    class="sensor-number"
-                    id="co"
-                >
-                    --
-                </span>
-
-                <span class="sensor-unit">
-                    ppm
-                </span>
-
-            </div>
-
-
-            <div class="meter-track">
-
-                <div
-                    class="meter-fill"
-                    id="bar-co"
-                ></div>
-
-            </div>
-
-
-            <div class="meter-head">
-
-                <span>
-                    LEVEL
-                </span>
-
-                <span>
-                    <span id="co-percent">
-                        0
-                    </span>%
-                </span>
-
-            </div>
-
-        </div>
-
-    </article>
-
-
-    <!-- CH4 -->
-
-    <article
-        class="sensor-card glass glass-tilt"
-        id="card-ch4"
-    >
-
-        <div class="sensor-header">
-
-            <div class="sensor-name">
-                METHANE / COMBUSTIBLE
-            </div>
-
-            <div class="sensor-type">
-                MQ-9
-            </div>
-
-        </div>
-
-
-        <div>
-
-            <div class="sensor-value">
-
-                <span
-                    class="sensor-number"
-                    id="ch4"
-                >
-                    --
-                </span>
-
-                <span class="sensor-unit">
-                    ppm
-                </span>
-
-            </div>
-
-
-            <div class="meter-track">
-
-                <div
-                    class="meter-fill"
-                    id="bar-ch4"
-                ></div>
-
-            </div>
-
-
-            <div class="meter-head">
-
-                <span>
-                    LEVEL
-                </span>
-
-                <span>
-                    <span id="ch4-percent">
-                        0
-                    </span>%
-                </span>
-
-            </div>
-
-        </div>
-
-    </article>
-
-
-    <!-- NH3 -->
-
-    <article
-        class="sensor-card glass glass-tilt"
-        id="card-nh3"
-    >
-
-        <div class="sensor-header">
-
-            <div class="sensor-name">
-                AMMONIA / GAS RESPONSE
-            </div>
-
-            <div class="sensor-type">
-                MQ-135
-            </div>
-
-        </div>
-
-
-        <div>
-
-            <div class="sensor-value">
-
-                <span
-                    class="sensor-number"
-                    id="nh3"
-                >
-                    --
-                </span>
-
-                <span class="sensor-unit">
-                    ppm
-                </span>
-
-            </div>
-
-
-            <div class="meter-track">
-
-                <div
-                    class="meter-fill"
-                    id="bar-nh3"
-                ></div>
-
-            </div>
-
-
-            <div class="meter-head">
-
-                <span>
-                    LEVEL
-                </span>
-
-                <span>
-                    <span id="nh3-percent">
-                        0
-                    </span>%
-                </span>
-
-            </div>
-
-        </div>
-
-    </article>
-
-
-    <!-- O3 -->
-
-    <article
-        class="sensor-card glass glass-tilt"
-        id="card-o3"
-    >
-
-        <div class="sensor-header">
-
-            <div class="sensor-name">
-                OZONE
-            </div>
-
-            <div class="sensor-type">
-                MQ-131
-            </div>
-
-        </div>
-
-
-        <div>
-
-            <div class="sensor-value">
-
-                <span
-                    class="sensor-number"
-                    id="o3"
-                >
-                    --
-                </span>
-
-                <span class="sensor-unit">
-                    ppb
-                </span>
-
-            </div>
-
-
-            <div class="meter-track">
-
-                <div
-                    class="meter-fill"
-                    id="bar-o3"
-                ></div>
-
-            </div>
-
-
-            <div class="meter-head">
-
-                <span>
-                    LEVEL
-                </span>
-
-                <span>
-                    <span id="o3-percent">
-                        0
-                    </span>%
-                </span>
-
-            </div>
-
-        </div>
-
-    </article>
-
-</div>
-
-
-<!-- TELEMETRY -->
-
-<div class="telemetry-row">
-
-
-    <section class="status-card glass glass-tilt">
-
-        <div class="status-title">
-            NODE TELEMETRY
-        </div>
-
-        <div class="status-sub">
-            Real-time system diagnostics
-        </div>
-
-
-        <div class="status-items">
-
-
-            <div class="status-item">
-
-                <span class="status-label">
-                    DEVICE
-                </span>
-
-                <span
-                    class="status-value"
-                    id="device-status"
-                >
-                    AQI-001
-                </span>
-
-            </div>
-
-
-            <div class="status-item">
-
-                <span class="status-label">
-                    CONTROLLER
-                </span>
-
-                <span class="status-value value-good">
-                    ESP32-S3
-                </span>
-
-            </div>
-
-
-            <div class="status-item">
-
-                <span class="status-label">
-                    TELEMETRY
-                </span>
-
-                <span
-                    class="status-value value-good"
-                    id="telemetry-status"
-                >
-                    LIVE
-                </span>
-
-            </div>
-
-
-            <div class="status-item">
-
-                <span class="status-label">
-                    CLOUD
-                </span>
-
-                <span
-                    class="status-value value-good"
-                    id="api-status"
-                >
-                    ONLINE
-                </span>
-
-            </div>
-
-
-            <div class="status-item">
-
-                <span class="status-label">
-                    GPS
-                </span>
-
-                <span
-                    class="status-value value-warn"
-                    id="gps-status-text"
-                >
-                    WAITING
-                </span>
-
-            </div>
-
-
-            <div class="status-item">
-
-                <span class="status-label">
-                    SATELLITES
-                </span>
-
-                <span
-                    class="status-value"
-                    id="satellites-value"
-                >
-                    --
-                </span>
-
-            </div>
-
-
-            <div class="status-item">
-
-                <span class="status-label">
-                    ACCURACY
-                </span>
-
-                <span
-                    class="status-value"
-                    id="accuracy-value"
-                >
-                    --
-                </span>
-
-            </div>
-
-
-            <div class="status-item">
-
-                <span class="status-label">
-                    LATITUDE
-                </span>
-
-                <span
-                    class="status-value"
-                    id="latitude-value"
-                >
-                    --
-                </span>
-
-            </div>
-
-
-            <div class="status-item">
-
-                <span class="status-label">
-                    LONGITUDE
-                </span>
-
-                <span
-                    class="status-value"
-                    id="longitude-value"
-                >
-                    --
-                </span>
-
-            </div>
-
-
-            <div class="status-item">
-
-                <span class="status-label">
-                    UPDATE RATE
-                </span>
-
-                <span class="status-value">
-                    ~10 SEC
-                </span>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- CHART -->
-
-    <section class="chart-card glass glass-tilt">
-
-        <div class="chart-heading">
 
             <div>
 
-                <div class="chart-title">
-                    AIR QUALITY HISTORY
+                <div class="sensor-value">
+
+                    <span
+                        class="sensor-number"
+                        id="pm25"
+                    >
+                        --
+                    </span>
+
+                    <span class="sensor-unit">
+                        µg/m³
+                    </span>
+
                 </div>
 
-                <div class="chart-caption">
-                    Rolling present-AQI telemetry
+
+                <div class="meter-track">
+
+                    <div
+                        class="meter-fill"
+                        id="bar-pm25"
+                    ></div>
+
+                </div>
+
+
+                <div class="meter-head">
+
+                    <span>
+                        EXPOSURE
+                    </span>
+
+                    <span>
+
+                        <span id="pm25-percent">
+                            0
+                        </span>%
+
+                    </span>
+
                 </div>
 
             </div>
 
-            <div class="chart-window">
-                25 SAMPLES
+        </article>
+
+
+        <!-- PM10 -->
+
+        <article
+            class="sensor-card glass glass-tilt"
+            id="card-pm10"
+        >
+
+            <div class="sensor-header">
+
+                <div class="sensor-name">
+                    PARTICULATE MATTER PM10
+                </div>
+
+                <div class="sensor-type">
+                    EST.
+                </div>
+
             </div>
 
-        </div>
+
+            <div>
+
+                <div class="sensor-value">
+
+                    <span
+                        class="sensor-number"
+                        id="pm10"
+                    >
+                        --
+                    </span>
+
+                    <span class="sensor-unit">
+                        µg/m³
+                    </span>
+
+                </div>
 
 
-        <div class="chart-container">
+                <div class="meter-track">
 
-            <canvas id="aqiChart"></canvas>
+                    <div
+                        class="meter-fill"
+                        id="bar-pm10"
+                    ></div>
 
-        </div>
+                </div>
 
-    </section>
+
+                <div class="meter-head">
+
+                    <span>
+                        EXPOSURE
+                    </span>
+
+                    <span>
+
+                        <span id="pm10-percent">
+                            0
+                        </span>%
+
+                    </span>
+
+                </div>
+
+            </div>
+
+        </article>
+
+
+        <!-- CO -->
+
+        <article
+            class="sensor-card glass glass-tilt"
+            id="card-co"
+        >
+
+            <div class="sensor-header">
+
+                <div class="sensor-name">
+                    CARBON MONOXIDE
+                </div>
+
+                <div class="sensor-type">
+                    MQ-7
+                </div>
+
+            </div>
+
+
+            <div>
+
+                <div class="sensor-value">
+
+                    <span
+                        class="sensor-number"
+                        id="co"
+                    >
+                        --
+                    </span>
+
+                    <span class="sensor-unit">
+                        ppm
+                    </span>
+
+                </div>
+
+
+                <div class="meter-track">
+
+                    <div
+                        class="meter-fill"
+                        id="bar-co"
+                    ></div>
+
+                </div>
+
+
+                <div class="meter-head">
+
+                    <span>
+                        LEVEL
+                    </span>
+
+                    <span>
+
+                        <span id="co-percent">
+                            0
+                        </span>%
+
+                    </span>
+
+                </div>
+
+            </div>
+
+        </article>
+
+
+        <!-- CH4 -->
+
+        <article
+            class="sensor-card glass glass-tilt"
+            id="card-ch4"
+        >
+
+            <div class="sensor-header">
+
+                <div class="sensor-name">
+                    METHANE / COMBUSTIBLE
+                </div>
+
+                <div class="sensor-type">
+                    MQ-9
+                </div>
+
+            </div>
+
+
+            <div>
+
+                <div class="sensor-value">
+
+                    <span
+                        class="sensor-number"
+                        id="ch4"
+                    >
+                        --
+                    </span>
+
+                    <span class="sensor-unit">
+                        ppm
+                    </span>
+
+                </div>
+
+
+                <div class="meter-track">
+
+                    <div
+                        class="meter-fill"
+                        id="bar-ch4"
+                    ></div>
+
+                </div>
+
+
+                <div class="meter-head">
+
+                    <span>
+                        LEVEL
+                    </span>
+
+                    <span>
+
+                        <span id="ch4-percent">
+                            0
+                        </span>%
+
+                    </span>
+
+                </div>
+
+            </div>
+
+        </article>
+
+
+        <!-- NH3 -->
+
+        <article
+            class="sensor-card glass glass-tilt"
+            id="card-nh3"
+        >
+
+            <div class="sensor-header">
+
+                <div class="sensor-name">
+                    AMMONIA / GAS RESPONSE
+                </div>
+
+                <div class="sensor-type">
+                    MQ-135
+                </div>
+
+            </div>
+
+
+            <div>
+
+                <div class="sensor-value">
+
+                    <span
+                        class="sensor-number"
+                        id="nh3"
+                    >
+                        --
+                    </span>
+
+                    <span class="sensor-unit">
+                        ppm
+                    </span>
+
+                </div>
+
+
+                <div class="meter-track">
+
+                    <div
+                        class="meter-fill"
+                        id="bar-nh3"
+                    ></div>
+
+                </div>
+
+
+                <div class="meter-head">
+
+                    <span>
+                        LEVEL
+                    </span>
+
+                    <span>
+
+                        <span id="nh3-percent">
+                            0
+                        </span>%
+
+                    </span>
+
+                </div>
+
+            </div>
+
+        </article>
+
+
+        <!-- O3 -->
+
+        <article
+            class="sensor-card glass glass-tilt"
+            id="card-o3"
+        >
+
+            <div class="sensor-header">
+
+                <div class="sensor-name">
+                    OZONE
+                </div>
+
+                <div class="sensor-type">
+                    MQ-131
+                </div>
+
+            </div>
+
+
+            <div>
+
+                <div class="sensor-value">
+
+                    <span
+                        class="sensor-number"
+                        id="o3"
+                    >
+                        --
+                    </span>
+
+                    <span class="sensor-unit">
+                        ppb
+                    </span>
+
+                </div>
+
+
+                <div class="meter-track">
+
+                    <div
+                        class="meter-fill"
+                        id="bar-o3"
+                    ></div>
+
+                </div>
+
+
+                <div class="meter-head">
+
+                    <span>
+                        LEVEL
+                    </span>
+
+                    <span>
+
+                        <span id="o3-percent">
+                            0
+                        </span>%
+
+                    </span>
+
+                </div>
+
+            </div>
+
+        </article>
+
+    </div>
+
+
+    <!-- TELEMETRY -->
+
+    <div class="telemetry-row">
+
+
+        <section class="status-card glass glass-tilt">
+
+            <div class="status-title">
+                NODE TELEMETRY
+            </div>
+
+            <div class="status-sub">
+                Real-time system diagnostics
+            </div>
+
+
+            <div class="status-items">
+
+
+                <div class="status-item">
+
+                    <span class="status-label">
+                        DEVICE
+                    </span>
+
+                    <span
+                        class="status-value"
+                        id="device-status"
+                    >
+                        AQI-001
+                    </span>
+
+                </div>
+
+
+                <div class="status-item">
+
+                    <span class="status-label">
+                        CONTROLLER
+                    </span>
+
+                    <span class="status-value value-good">
+                        ESP32-S3
+                    </span>
+
+                </div>
+
+
+                <div class="status-item">
+
+                    <span class="status-label">
+                        TELEMETRY
+                    </span>
+
+                    <span
+                        class="status-value value-good"
+                        id="telemetry-status"
+                    >
+                        LIVE
+                    </span>
+
+                </div>
+
+
+                <div class="status-item">
+
+                    <span class="status-label">
+                        CLOUD
+                    </span>
+
+                    <span
+                        class="status-value value-good"
+                        id="api-status"
+                    >
+                        ONLINE
+                    </span>
+
+                </div>
+
+
+                <div class="status-item">
+
+                    <span class="status-label">
+                        GPS
+                    </span>
+
+                    <span
+                        class="status-value value-warn"
+                        id="gps-status-text"
+                    >
+                        WAITING
+                    </span>
+
+                </div>
+
+
+                <div class="status-item">
+
+                    <span class="status-label">
+                        SATELLITES
+                    </span>
+
+                    <span
+                        class="status-value"
+                        id="satellites-value"
+                    >
+                        --
+                    </span>
+
+                </div>
+
+
+                <div class="status-item">
+
+                    <span class="status-label">
+                        ACCURACY
+                    </span>
+
+                    <span
+                        class="status-value"
+                        id="accuracy-value"
+                    >
+                        --
+                    </span>
+
+                </div>
+
+
+                <div class="status-item">
+
+                    <span class="status-label">
+                        LATITUDE
+                    </span>
+
+                    <span
+                        class="status-value"
+                        id="latitude-value"
+                    >
+                        --
+                    </span>
+
+                </div>
+
+
+                <div class="status-item">
+
+                    <span class="status-label">
+                        LONGITUDE
+                    </span>
+
+                    <span
+                        class="status-value"
+                        id="longitude-value"
+                    >
+                        --
+                    </span>
+
+                </div>
+
+
+                <div class="status-item">
+
+                    <span class="status-label">
+                        UPDATE RATE
+                    </span>
+
+                    <span class="status-value">
+                        ~10 SEC
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- CHART -->
+
+        <section class="chart-card glass glass-tilt">
+
+            <div class="chart-heading">
+
+                <div>
+
+                    <div class="chart-title">
+                        AIR QUALITY HISTORY
+                    </div>
+
+                    <div class="chart-caption">
+                        Rolling present-AQI telemetry
+                    </div>
+
+                </div>
+
+                <div class="chart-window">
+                    25 SAMPLES
+                </div>
+
+            </div>
+
+
+            <div class="chart-container">
+
+                <canvas id="aqiChart"></canvas>
+
+            </div>
+
+        </section>
+
+    </div>
 
 </div>
-```
 
-</div>
 
 <!-- =====================================================
      RIGHT RAIL
@@ -2982,245 +3567,247 @@ body {
 
 <div class="rail">
 
-```
-<!-- LOCATION -->
 
-<section class="location-card glass glass-tilt">
+    <!-- LOCATION -->
 
-    <div class="location-heading">
+    <section class="location-card glass glass-tilt">
 
-        <div>
+        <div class="location-heading">
 
-            <div class="location-title">
-                DEVICE LOCATION
+            <div>
+
+                <div class="location-title">
+                    DEVICE LOCATION
+                </div>
+
+                <div class="location-sub">
+                    Live NEO-6M GPS position
+                </div>
+
             </div>
 
-            <div class="location-sub">
-                Live NEO-6M GPS position
+
+            <div
+                class="location-state"
+                id="location-state"
+            >
+                WAITING FOR GPS
+            </div>
+
+        </div>
+
+
+        <div class="map-wrap">
+
+            <div id="device-map"></div>
+
+            <div
+                class="accuracy-badge"
+                id="accuracy-badge"
+            >
+                ◎
+
+                <span id="accuracy-text">
+                    --
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="location-footer">
+
+            <div
+                class="location-name"
+                id="location-name"
+            >
+                GPS location unavailable
+            </div>
+
+
+            <a
+                href="#"
+                target="_blank"
+                id="maps-link"
+                class="maps-button"
+                style="display:none;"
+            >
+                📍 MAPS
+            </a>
+
+        </div>
+
+    </section>
+
+
+    <!-- FUTURE AQI -->
+
+    <section class="forecast-card glass glass-tilt">
+
+        <div class="advice-title">
+            FUTURE AQI • GPS LOCATION
+        </div>
+
+
+        <div
+            class="forecast-location"
+            id="forecast-location"
+        >
+            Waiting for GPS fix...
+        </div>
+
+
+        <div class="forecast-grid">
+
+
+            <!-- +1 HOUR -->
+
+            <div class="forecast-item">
+
+                <div class="forecast-time">
+                    +1 HOUR
+                </div>
+
+                <div
+                    class="forecast-aqi"
+                    id="forecast-1h"
+                >
+                    --
+                </div>
+
+                <div
+                    class="forecast-category"
+                    id="forecast-1h-cat"
+                >
+                    --
+                </div>
+
+            </div>
+
+
+            <!-- +2 HOURS -->
+
+            <div class="forecast-item">
+
+                <div class="forecast-time">
+                    +2 HOURS
+                </div>
+
+                <div
+                    class="forecast-aqi"
+                    id="forecast-2h"
+                >
+                    --
+                </div>
+
+                <div
+                    class="forecast-category"
+                    id="forecast-2h-cat"
+                >
+                    --
+                </div>
+
+            </div>
+
+
+            <!-- +3 HOURS -->
+
+            <div class="forecast-item">
+
+                <div class="forecast-time">
+                    +3 HOURS
+                </div>
+
+                <div
+                    class="forecast-aqi"
+                    id="forecast-3h"
+                >
+                    --
+                </div>
+
+                <div
+                    class="forecast-category"
+                    id="forecast-3h-cat"
+                >
+                    --
+                </div>
+
             </div>
 
         </div>
 
 
         <div
-            class="location-state"
-            id="location-state"
+            class="forecast-source"
+            id="forecast-source"
         >
-            WAITING FOR GPS
+            Waiting for location forecast...
         </div>
 
-    </div>
+    </section>
 
 
-    <div class="map-wrap">
+    <!-- AI ADVICE -->
 
-        <div id="device-map"></div>
+    <section class="advice-card glass glass-tilt">
 
-        <div
-            class="accuracy-badge"
-            id="accuracy-badge"
-        >
-            ◎
-            <span id="accuracy-text">
-                --
-            </span>
-        </div>
-
-    </div>
-
-
-    <div class="location-footer">
-
-        <div
-            class="location-name"
-            id="location-name"
-        >
-            GPS location unavailable
+        <div class="advice-title">
+            AI HEALTH ADVICE
         </div>
 
 
-        <a
-            href="#"
-            target="_blank"
-            id="maps-link"
-            class="maps-button"
-            style="display:none;"
-        >
-            📍 MAPS
-        </a>
+        <div id="advice-list">
 
-    </div>
+            <div
+                style="
+                    color:var(--muted);
+                    font-size:.7rem;
+                "
+            >
+                Waiting for ML analysis...
+            </div>
 
-</section>
+        </div>
 
-
-<!-- FUTURE AQI -->
-
-<section class="forecast-card glass glass-tilt">
-
-    <div class="advice-title">
-        FUTURE AQI • GPS LOCATION
-    </div>
+    </section>
 
 
-    <div
-        class="forecast-location"
-        id="forecast-location"
-    >
-        Waiting for GPS fix...
-    </div>
+    <!-- ALERT -->
+
+    <div class="alert-strip glass">
+
+        <div class="alert-icon">
+            ◈
+        </div>
 
 
-    <div class="forecast-grid">
+        <div class="alert-text">
 
-
-        <!-- +1 HOUR -->
-
-        <div class="forecast-item">
-
-            <div class="forecast-time">
-                +1 HOUR
+            <div
+                class="alert-main"
+                id="alert-main"
+            >
+                SYSTEM NOMINAL
             </div>
 
             <div
-                class="forecast-aqi"
-                id="forecast-1h"
+                class="alert-sub"
+                id="alert-sub"
             >
-                --
+                Waiting for live environmental telemetry.
             </div>
 
-            <div
-                class="forecast-category"
-                id="forecast-1h-cat"
-            >
-                --
-            </div>
-
-        </div>
-
-
-        <!-- +2 HOURS -->
-
-        <div class="forecast-item">
-
-            <div class="forecast-time">
-                +2 HOURS
-            </div>
-
-            <div
-                class="forecast-aqi"
-                id="forecast-2h"
-            >
-                --
-            </div>
-
-            <div
-                class="forecast-category"
-                id="forecast-2h-cat"
-            >
-                --
-            </div>
-
-        </div>
-
-
-        <!-- +3 HOURS -->
-
-        <div class="forecast-item">
-
-            <div class="forecast-time">
-                +3 HOURS
-            </div>
-
-            <div
-                class="forecast-aqi"
-                id="forecast-3h"
-            >
-                --
-            </div>
-
-            <div
-                class="forecast-category"
-                id="forecast-3h-cat"
-            >
-                --
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <div
-        class="forecast-source"
-        id="forecast-source"
-    >
-        Waiting for location forecast...
-    </div>
-
-</section>
-
-
-<!-- AI ADVICE -->
-
-<section class="advice-card glass glass-tilt">
-
-    <div class="advice-title">
-        AI HEALTH ADVICE
-    </div>
-
-
-    <div id="advice-list">
-
-        <div
-            style="
-                color:var(--muted);
-                font-size:.7rem;
-            "
-        >
-            Waiting for ML analysis...
-        </div>
-
-    </div>
-
-</section>
-
-
-<!-- ALERT -->
-
-<div class="alert-strip glass">
-
-    <div class="alert-icon">
-        ◈
-    </div>
-
-
-    <div class="alert-text">
-
-        <div
-            class="alert-main"
-            id="alert-main"
-        >
-            SYSTEM NOMINAL
-        </div>
-
-        <div
-            class="alert-sub"
-            id="alert-sub"
-        >
-            Waiting for live environmental telemetry.
         </div>
 
     </div>
 
 </div>
-```
 
 </div>
 
 </div>
 
-</div>
 
 <script>
 
@@ -3234,6 +3821,7 @@ let glowY = 20;
 let targetX = 50;
 let targetY = 20;
 
+
 window.addEventListener(
     "pointermove",
     (e) => {
@@ -3243,8 +3831,10 @@ window.addEventListener(
 
         targetY =
             (e.clientY / window.innerHeight) * 100;
+
     }
 );
+
 
 function animateGlow() {
 
@@ -3253,6 +3843,7 @@ function animateGlow() {
 
     glowY +=
         (targetY - glowY) * 0.04;
+
 
     document.body.style.setProperty(
         "--gx",
@@ -3264,10 +3855,12 @@ function animateGlow() {
         glowY + "%"
     );
 
+
     requestAnimationFrame(
         animateGlow
     );
 }
+
 
 requestAnimationFrame(
     animateGlow
@@ -3283,13 +3876,18 @@ document.addEventListener(
     (e) => {
 
         const card =
-            e.target.closest(".glass-tilt");
+            e.target.closest(
+                ".glass-tilt"
+            );
+
 
         if (!card)
             return;
 
+
         const rect =
             card.getBoundingClientRect();
+
 
         const size =
             Math.max(
@@ -3297,27 +3895,42 @@ document.addEventListener(
                 rect.height
             ) * 1.4;
 
+
         const ripple =
-            document.createElement("span");
+            document.createElement(
+                "span"
+            );
+
 
         ripple.className =
             "ripple";
+
 
         ripple.style.width =
             ripple.style.height =
             size + "px";
 
+
         ripple.style.left =
-            (e.clientX -
+            (
+                e.clientX -
                 rect.left -
-                size / 2) + "px";
+                size / 2
+            ) + "px";
+
 
         ripple.style.top =
-            (e.clientY -
+            (
+                e.clientY -
                 rect.top -
-                size / 2) + "px";
+                size / 2
+            ) + "px";
 
-        card.appendChild(ripple);
+
+        card.appendChild(
+            ripple
+        );
+
 
         ripple.addEventListener(
             "animationend",
@@ -3348,7 +3961,7 @@ let lastGeocodeKey = null;
 
 
 /* =========================================================
-   DEVICE MAP ICON
+   MAP ICON
 ========================================================= */
 
 const devicePinIcon =
@@ -3362,11 +3975,14 @@ const devicePinIcon =
             '<div class="pin-core"></div>' +
             '</div>',
 
-        iconSize: [22,22],
+        iconSize:
+            [22,22],
 
-        iconAnchor: [11,11],
+        iconAnchor:
+            [11,11],
 
-        popupAnchor: [0,-12]
+        popupAnchor:
+            [0,-12]
 
     });
 
@@ -3381,25 +3997,29 @@ function initializeMap() {
         L.map(
             "device-map",
             {
-                zoomControl: true,
 
-                attributionControl: true,
+                zoomControl:
+                    true,
 
-                tap: true,
+                attributionControl:
+                    true,
 
-                tapTolerance: 22,
+                inertia:
+                    true,
 
-                inertia: true,
+                inertiaDeceleration:
+                    3000,
 
-                inertiaDeceleration: 3000,
+                zoomSnap:
+                    0.25,
 
-                zoomSnap: 0.25,
+                wheelPxPerZoomLevel:
+                    90
 
-                wheelPxPerZoomLevel: 90
             }
         )
         .setView(
-            [22.5726, 88.3639],
+            [22.5726,88.3639],
             5
         );
 
@@ -3407,23 +4027,33 @@ function initializeMap() {
     L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
-            maxZoom: 19,
+
+            maxZoom:
+                19,
 
             attribution:
-                '&copy; OpenStreetMap contributors'
+                "&copy; OpenStreetMap contributors"
+
         }
-    )
-    .addTo(deviceMap);
+    ).addTo(
+        deviceMap
+    );
 
 
     deviceMarker =
         L.marker(
             [22.5726,88.3639],
             {
-                icon: devicePinIcon,
-                opacity: 0
+
+                icon:
+                    devicePinIcon,
+
+                opacity:
+                    0
+
             }
         );
+
 
     deviceMarker.addTo(
         deviceMap
@@ -3434,19 +4064,28 @@ function initializeMap() {
         L.circle(
             [22.5726,88.3639],
             {
-                radius: 100,
 
-                color: "#2dd9ec",
+                radius:
+                    100,
 
-                weight: 1.4,
+                color:
+                    "#2dd9ec",
 
-                fillColor: "#2dd9ec",
+                weight:
+                    1.4,
 
-                fillOpacity: 0,
+                fillColor:
+                    "#2dd9ec",
 
-                opacity: 0
+                fillOpacity:
+                    0,
+
+                opacity:
+                    0
+
             }
         );
+
 
     deviceAccuracyCircle.addTo(
         deviceMap
@@ -3455,7 +4094,10 @@ function initializeMap() {
 
     setTimeout(
         () => {
-            deviceMap.invalidateSize();
+
+            if (deviceMap)
+                deviceMap.invalidateSize();
+
         },
         350
     );
@@ -3485,8 +4127,10 @@ function number(
     const n =
         Number(value);
 
+
     if (!Number.isFinite(n))
         return "--";
+
 
     return n.toFixed(
         decimals
@@ -3500,10 +4144,14 @@ function setText(
 ) {
 
     const el =
-        document.getElementById(id);
+        document.getElementById(
+            id
+        );
+
 
     if (el)
-        el.textContent = value;
+        el.textContent =
+            value;
 }
 
 
@@ -3514,17 +4162,22 @@ function aqiColor(
     value =
         Number(value);
 
+
     if (value <= 50)
         return "#35e0a1";
+
 
     if (value <= 100)
         return "#f6c453";
 
+
     if (value <= 200)
         return "#fb9a56";
 
+
     if (value <= 300)
         return "#fb6f83";
+
 
     return "#ef4444";
 }
@@ -3537,20 +4190,26 @@ function aqiDescription(
     value =
         Number(value);
 
+
     if (value <= 50)
         return "Air quality is within the good range.";
+
 
     if (value <= 100)
         return "Air quality is satisfactory with limited concern.";
 
+
     if (value <= 200)
         return "Air quality is moderately elevated.";
+
 
     if (value <= 300)
         return "Air quality is poor. Sensitive groups should take care.";
 
+
     if (value <= 400)
         return "Air quality is very poor.";
+
 
     return "Severe pollution conditions detected.";
 }
@@ -3567,10 +4226,12 @@ function updateMeter(
             "bar-" + id
         );
 
+
     const pct =
         document.getElementById(
             id + "-percent"
         );
+
 
     if (!bar)
         return;
@@ -3622,15 +4283,18 @@ function updateMeter(
     bar.style.width =
         percentage + "%";
 
+
     bar.style.background =
         color;
 
 
-    if (pct)
+    if (pct) {
+
         pct.textContent =
             Math.round(
                 percentage
             );
+    }
 }
 
 
@@ -3648,25 +4312,30 @@ function distanceMeters(
     const R =
         6371000;
 
+
     const toRad =
         d =>
             d * Math.PI / 180;
+
 
     const dLat =
         toRad(
             lat2 - lat1
         );
 
+
     const dLon =
         toRad(
             lon2 - lon1
         );
+
 
     const a =
         Math.sin(dLat / 2) ** 2 +
         Math.cos(toRad(lat1)) *
         Math.cos(toRad(lat2)) *
         Math.sin(dLon / 2) ** 2;
+
 
     return (
         2 *
@@ -3691,7 +4360,8 @@ async function getLocationName(
 
         const url =
             "https://nominatim.openstreetmap.org/reverse" +
-            "?format=jsonv2&lat=" +
+            "?format=jsonv2" +
+            "&lat=" +
             encodeURIComponent(latitude) +
             "&lon=" +
             encodeURIComponent(longitude);
@@ -3730,12 +4400,14 @@ async function getLocationName(
 
         return "GPS position acquired";
 
+
     } catch (error) {
 
         console.warn(
             "Location name error:",
             error
         );
+
 
         return "GPS position acquired";
     }
@@ -3755,35 +4427,42 @@ async function updateGPS(
             "gps-status"
         );
 
+
     const gpsHealth =
         document.getElementById(
             "gps-health"
         );
+
 
     const gpsStatusText =
         document.getElementById(
             "gps-status-text"
         );
 
+
     const locationState =
         document.getElementById(
             "location-state"
         );
+
 
     const locationName =
         document.getElementById(
             "location-name"
         );
 
+
     const mapsLink =
         document.getElementById(
             "maps-link"
         );
 
+
     const accuracyBadge =
         document.getElementById(
             "accuracy-badge"
         );
+
 
     const accuracyText =
         document.getElementById(
@@ -3792,23 +4471,37 @@ async function updateGPS(
 
 
     if (
+
         data.gps_fix === true &&
+
         data.latitude !== null &&
+
         data.longitude !== null &&
+
         data.latitude !== undefined &&
+
         data.longitude !== undefined
+
     ) {
 
         const lat =
-            Number(data.latitude);
+            Number(
+                data.latitude
+            );
+
 
         const lon =
-            Number(data.longitude);
+            Number(
+                data.longitude
+            );
 
 
         if (
+
             !Number.isFinite(lat) ||
+
             !Number.isFinite(lon)
+
         ) {
 
             return;
@@ -3816,12 +4509,19 @@ async function updateGPS(
 
 
         let accuracy =
-            Number(data.accuracy);
+            Number(
+                data.accuracy
+            );
 
 
         if (
-            !Number.isFinite(accuracy) ||
+
+            !Number.isFinite(
+                accuracy
+            ) ||
+
             accuracy <= 0
+
         ) {
 
             accuracy = null;
@@ -3833,26 +4533,32 @@ async function updateGPS(
             "FIXED"
         );
 
+
         setText(
             "gps-status-text",
             "GPS FIX"
         );
 
 
-        if (gpsStatus)
+        if (gpsStatus) {
+
             gpsStatus.style.color =
                 "var(--green)";
+        }
 
 
-        if (gpsStatusText)
+        if (gpsStatusText) {
+
             gpsStatusText.className =
                 "status-value value-good";
+        }
 
 
         if (gpsHealth) {
 
             gpsHealth.className =
                 "health-state";
+
 
             gpsHealth.innerHTML =
                 '<span class="health-dot"></span>' +
@@ -3887,17 +4593,18 @@ async function updateGPS(
         }
 
 
-        if (
-            accuracy !== null
-        ) {
+        if (accuracy !== null) {
 
             accuracyBadge.classList.add(
                 "show"
             );
 
+
             accuracyText.textContent =
                 "±" +
-                Math.round(accuracy) +
+                Math.round(
+                    accuracy
+                ) +
                 " m";
 
         } else {
@@ -3915,11 +4622,17 @@ async function updateGPS(
         if (deviceMarker) {
 
             deviceMarker
-                .setLatLng(position)
-                .setOpacity(1);
+                .setLatLng(
+                    position
+                )
+                .setOpacity(
+                    1
+                );
 
 
-            if (!deviceMarker.getPopup()) {
+            if (
+                !deviceMarker.getPopup()
+            ) {
 
                 deviceMarker.bindPopup(
                     "<strong>AeroSense AI</strong><br>" +
@@ -3932,13 +4645,15 @@ async function updateGPS(
 
         if (deviceAccuracyCircle) {
 
-            if (
-                accuracy !== null
-            ) {
+            if (accuracy !== null) {
 
                 deviceAccuracyCircle
-                    .setLatLng(position)
-                    .setRadius(accuracy)
+                    .setLatLng(
+                        position
+                    )
+                    .setRadius(
+                        accuracy
+                    )
                     .setStyle(
                         {
                             opacity: .5,
@@ -3949,7 +4664,9 @@ async function updateGPS(
             } else {
 
                 deviceAccuracyCircle
-                    .setLatLng(position)
+                    .setLatLng(
+                        position
+                    )
                     .setStyle(
                         {
                             opacity: 0,
@@ -3966,9 +4683,7 @@ async function updateGPS(
                 16;
 
 
-            if (
-                accuracy !== null
-            ) {
+            if (accuracy !== null) {
 
                 if (
                     accuracy > 150
@@ -3997,21 +4712,31 @@ async function updateGPS(
                     position,
                     targetZoom,
                     {
-                        duration: 1.4,
-                        easeLinearity: .25
+                        duration:
+                            1.4,
+
+                        easeLinearity:
+                            .25
                     }
                 );
 
-                hasCenteredOnce = true;
+
+                hasCenteredOnce =
+                    true;
 
             } else {
 
                 deviceMap.panTo(
                     position,
                     {
-                        animate: true,
-                        duration: .9,
-                        easeLinearity: .3
+                        animate:
+                            true,
+
+                        duration:
+                            .9,
+
+                        easeLinearity:
+                            .3
                     }
                 );
             }
@@ -4060,11 +4785,14 @@ async function updateGPS(
 
 
         if (
+
             lastGeocodeKey !== geocodeKey &&
+
             (
                 moved > 30 ||
                 lastGeocodeKey === null
             )
+
         ) {
 
             locationName.textContent =
@@ -4089,6 +4817,7 @@ async function updateGPS(
 
         lastLatitude =
             lat;
+
 
         lastLongitude =
             lon;
@@ -4154,7 +4883,8 @@ async function updateGPS(
 
 
 /* =========================================================
-   FUTURE AQI FORECAST
+   FUTURE AQI
+   ONLY 1 / 2 / 3 HOURS
 ========================================================= */
 
 function forecastAQIColor(
@@ -4198,6 +4928,7 @@ function updateForecast(
             "forecast-location"
         );
 
+
     const source =
         document.getElementById(
             "forecast-source"
@@ -4209,17 +4940,26 @@ function updateForecast(
     ------------------------------------------------- */
 
     if (
+
         data.latitude !== null &&
+
         data.latitude !== undefined &&
+
         data.longitude !== null &&
+
         data.longitude !== undefined
+
     ) {
 
         location.textContent =
             "Lat " +
-            Number(data.latitude).toFixed(4) +
+            Number(
+                data.latitude
+            ).toFixed(4) +
             " • Lon " +
-            Number(data.longitude).toFixed(4);
+            Number(
+                data.longitude
+            ).toFixed(4);
 
     } else {
 
@@ -4229,7 +4969,7 @@ function updateForecast(
 
 
     /* -------------------------------------------------
-       RESET FORECAST VALUES
+       RESET
     ------------------------------------------------- */
 
     setText(
@@ -4242,6 +4982,7 @@ function updateForecast(
         "--"
     );
 
+
     setText(
         "forecast-2h",
         "--"
@@ -4251,6 +4992,7 @@ function updateForecast(
         "forecast-2h-cat",
         "--"
     );
+
 
     setText(
         "forecast-3h",
@@ -4268,10 +5010,13 @@ function updateForecast(
     ------------------------------------------------- */
 
     if (
+
         !Array.isArray(
             data.future_forecast
         ) ||
+
         data.future_forecast.length === 0
+
     ) {
 
         source.textContent =
@@ -4282,7 +5027,7 @@ function updateForecast(
 
 
     /* -------------------------------------------------
-       UPDATE FORECASTS
+       UPDATE 1 / 2 / 3 HOURS
     ------------------------------------------------- */
 
     data.future_forecast.forEach(
@@ -4294,18 +5039,15 @@ function updateForecast(
                 );
 
 
-            /* =========================================
-               +1 HOUR
-            ========================================= */
+            /* +1 HOUR */
 
-            if (
-                hours === 1
-            ) {
+            if (hours === 1) {
 
                 setText(
                     "forecast-1h",
                     item.aqi ?? "--"
                 );
+
 
                 setText(
                     "forecast-1h-cat",
@@ -4320,9 +5062,13 @@ function updateForecast(
 
 
                 if (
+
                     el &&
+
                     item.aqi !== null &&
+
                     item.aqi !== undefined
+
                 ) {
 
                     el.style.color =
@@ -4333,18 +5079,15 @@ function updateForecast(
             }
 
 
-            /* =========================================
-               +2 HOURS
-            ========================================= */
+            /* +2 HOURS */
 
-            if (
-                hours === 2
-            ) {
+            if (hours === 2) {
 
                 setText(
                     "forecast-2h",
                     item.aqi ?? "--"
                 );
+
 
                 setText(
                     "forecast-2h-cat",
@@ -4359,9 +5102,13 @@ function updateForecast(
 
 
                 if (
+
                     el &&
+
                     item.aqi !== null &&
+
                     item.aqi !== undefined
+
                 ) {
 
                     el.style.color =
@@ -4372,18 +5119,15 @@ function updateForecast(
             }
 
 
-            /* =========================================
-               +3 HOURS
-            ========================================= */
+            /* +3 HOURS */
 
-            if (
-                hours === 3
-            ) {
+            if (hours === 3) {
 
                 setText(
                     "forecast-3h",
                     item.aqi ?? "--"
                 );
+
 
                 setText(
                     "forecast-3h-cat",
@@ -4398,9 +5142,13 @@ function updateForecast(
 
 
                 if (
+
                     el &&
+
                     item.aqi !== null &&
+
                     item.aqi !== undefined
+
                 ) {
 
                     el.style.color =
@@ -4413,10 +5161,6 @@ function updateForecast(
         }
     );
 
-
-    /* -------------------------------------------------
-       FORECAST SOURCE
-    ------------------------------------------------- */
 
     source.textContent =
         data.forecast_source
@@ -4576,151 +5320,187 @@ const chart =
         ctx,
         {
 
-            type: "line",
+            type:
+                "line",
 
-            data: {
+            data:
+                {
 
-                labels:
-                    Array(25).fill(""),
+                    labels:
+                        Array(
+                            25
+                        ).fill(""),
 
-                datasets: [
+                    datasets:
+                        [
 
-                    {
-
-                        label:
-                            "Present AQI",
-
-                        data:
-                            Array(25).fill(null),
-
-                        borderColor:
-                            "#2dd9ec",
-
-                        backgroundColor:
-                            gradient,
-
-                        borderWidth:
-                            2.2,
-
-                        pointRadius:
-                            0,
-
-                        pointHoverRadius:
-                            5,
-
-                        pointHoverBackgroundColor:
-                            "#ffffff",
-
-                        pointHoverBorderColor:
-                            "#2dd9ec",
-
-                        pointHoverBorderWidth:
-                            2,
-
-                        tension:
-                            .4,
-
-                        fill:
-                            true
-                    }
-
-                ]
-            },
-
-            options: {
-
-                responsive:
-                    true,
-
-                maintainAspectRatio:
-                    false,
-
-                animation:
-                    {
-                        duration:
-                            500,
-
-                        easing:
-                            "easeOutCubic"
-                    },
-
-                interaction:
-                    {
-                        intersect:
-                            false,
-
-                        mode:
-                            "index"
-                    },
-
-                plugins:
-                    {
-                        legend:
-                            {
-                                display:
-                                    false
-                            }
-                    },
-
-                scales:
-                    {
-
-                        x:
-                            {
-                                grid:
-                                    {
-                                        color:
-                                            "rgba(148,163,184,.06)"
-                                    },
-
-                                ticks:
-                                    {
-                                        color:
-                                            "#576177",
-
-                                        maxTicksLimit:
-                                            6,
-
-                                        font:
-                                            {
-                                                size:
-                                                    9
-                                            }
-                                    }
-                            },
-
-                        y:
                             {
 
-                                min:
+                                label:
+                                    "Present AQI",
+
+                                data:
+                                    Array(
+                                        25
+                                    ).fill(null),
+
+                                borderColor:
+                                    "#2dd9ec",
+
+                                backgroundColor:
+                                    gradient,
+
+                                borderWidth:
+                                    2.2,
+
+                                pointRadius:
                                     0,
 
-                                max:
-                                    300,
+                                pointHoverRadius:
+                                    5,
 
-                                grid:
-                                    {
-                                        color:
-                                            "rgba(148,163,184,.07)"
-                                    },
+                                pointHoverBackgroundColor:
+                                    "#ffffff",
 
-                                ticks:
-                                    {
-                                        color:
-                                            "#93a0b4",
+                                pointHoverBorderColor:
+                                    "#2dd9ec",
 
-                                        font:
-                                            {
-                                                family:
-                                                    "monospace",
+                                pointHoverBorderWidth:
+                                    2,
 
-                                                size:
-                                                    9
-                                            }
-                                    }
+                                tension:
+                                    .4,
+
+                                fill:
+                                    true
+
                             }
-                    }
-            }
+
+                        ]
+
+                },
+
+            options:
+                {
+
+                    responsive:
+                        true,
+
+                    maintainAspectRatio:
+                        false,
+
+                    animation:
+                        {
+
+                            duration:
+                                500,
+
+                            easing:
+                                "easeOutCubic"
+
+                        },
+
+                    interaction:
+                        {
+
+                            intersect:
+                                false,
+
+                            mode:
+                                "index"
+
+                        },
+
+                    plugins:
+                        {
+
+                            legend:
+                                {
+
+                                    display:
+                                        false
+
+                                }
+
+                        },
+
+                    scales:
+                        {
+
+                            x:
+                                {
+
+                                    grid:
+                                        {
+
+                                            color:
+                                                "rgba(148,163,184,.06)"
+
+                                        },
+
+                                    ticks:
+                                        {
+
+                                            color:
+                                                "#576177",
+
+                                            maxTicksLimit:
+                                                6,
+
+                                            font:
+                                                {
+
+                                                    size:
+                                                        9
+
+                                                }
+
+                                        }
+
+                                },
+
+                            y:
+                                {
+
+                                    min:
+                                        0,
+
+                                    max:
+                                        300,
+
+                                    grid:
+                                        {
+
+                                            color:
+                                                "rgba(148,163,184,.07)"
+
+                                        },
+
+                                    ticks:
+                                        {
+
+                                            color:
+                                                "#93a0b4",
+
+                                            font:
+                                                {
+
+                                                    family:
+                                                        "monospace",
+
+                                                    size:
+                                                        9
+
+                                                }
+
+                                        }
+
+                                }
+
+                        }
+
+                }
+
         }
     );
 
@@ -4733,12 +5513,14 @@ socket.on(
     "live_data",
     async (data) => {
 
+
         /* -------------------------------------------------
-           SYNC TIME
+           SYNC
         ------------------------------------------------- */
 
         const now =
             new Date();
+
 
         setText(
             "last-sync",
@@ -4761,12 +5543,16 @@ socket.on(
 
 
             const color =
-                aqiColor(value);
+                aqiColor(
+                    value
+                );
 
 
             setText(
                 "aqi",
-                Math.round(value)
+                Math.round(
+                    value
+                )
             );
 
 
@@ -4781,7 +5567,9 @@ socket.on(
                     360,
                     Math.max(
                         0,
-                        value / 300 * 360
+                        value /
+                        300 *
+                        360
                     )
                 );
 
@@ -4819,7 +5607,9 @@ socket.on(
 
             setText(
                 "aqi-description",
-                aqiDescription(value)
+                aqiDescription(
+                    value
+                )
             );
         }
 
@@ -4895,7 +5685,7 @@ socket.on(
 
 
         /* -------------------------------------------------
-           SENSOR VALUES
+           SENSORS
         ------------------------------------------------- */
 
         if (
@@ -4903,12 +5693,19 @@ socket.on(
         ) {
 
             const v =
-                Number(data.pm25);
+                Number(
+                    data.pm25
+                );
+
 
             setText(
                 "pm25",
-                number(v,1)
+                number(
+                    v,
+                    1
+                )
             );
+
 
             updateMeter(
                 "pm25",
@@ -4923,12 +5720,19 @@ socket.on(
         ) {
 
             const v =
-                Number(data.pm10);
+                Number(
+                    data.pm10
+                );
+
 
             setText(
                 "pm10",
-                number(v,1)
+                number(
+                    v,
+                    1
+                )
             );
+
 
             updateMeter(
                 "pm10",
@@ -4943,12 +5747,19 @@ socket.on(
         ) {
 
             const v =
-                Number(data.co);
+                Number(
+                    data.co
+                );
+
 
             setText(
                 "co",
-                number(v,2)
+                number(
+                    v,
+                    2
+                )
             );
+
 
             updateMeter(
                 "co",
@@ -4963,12 +5774,19 @@ socket.on(
         ) {
 
             const v =
-                Number(data.ch4);
+                Number(
+                    data.ch4
+                );
+
 
             setText(
                 "ch4",
-                number(v,0)
+                number(
+                    v,
+                    0
+                )
             );
+
 
             updateMeter(
                 "ch4",
@@ -4983,12 +5801,19 @@ socket.on(
         ) {
 
             const v =
-                Number(data.nh3);
+                Number(
+                    data.nh3
+                );
+
 
             setText(
                 "nh3",
-                number(v,2)
+                number(
+                    v,
+                    2
+                )
             );
+
 
             updateMeter(
                 "nh3",
@@ -5003,12 +5828,19 @@ socket.on(
         ) {
 
             const v =
-                Number(data.o3);
+                Number(
+                    data.o3
+                );
+
 
             setText(
                 "o3",
-                number(v,0)
+                number(
+                    v,
+                    0
+                )
             );
+
 
             updateMeter(
                 "o3",
@@ -5041,8 +5873,11 @@ socket.on(
         ------------------------------------------------- */
 
         if (
+
             data.satellites !== undefined &&
+
             data.satellites !== null
+
         ) {
 
             setText(
@@ -5064,15 +5899,22 @@ socket.on(
         ------------------------------------------------- */
 
         if (
+
             data.accuracy !== undefined &&
+
             data.accuracy !== null &&
+
             Number.isFinite(
-                Number(data.accuracy)
+                Number(
+                    data.accuracy
+                )
             )
+
         ) {
 
             setText(
                 "accuracy-value",
+
                 "±" +
                 Math.round(
                     Number(
@@ -5096,15 +5938,22 @@ socket.on(
         ------------------------------------------------- */
 
         if (
+
             data.latitude !== undefined &&
+
             data.latitude !== null &&
+
             Number.isFinite(
-                Number(data.latitude)
+                Number(
+                    data.latitude
+                )
             )
+
         ) {
 
             setText(
                 "latitude-value",
+
                 Number(
                     data.latitude
                 ).toFixed(6)
@@ -5124,15 +5973,22 @@ socket.on(
         ------------------------------------------------- */
 
         if (
+
             data.longitude !== undefined &&
+
             data.longitude !== null &&
+
             Number.isFinite(
-                Number(data.longitude)
+                Number(
+                    data.longitude
+                )
             )
+
         ) {
 
             setText(
                 "longitude-value",
+
                 Number(
                     data.longitude
                 ).toFixed(6)
@@ -5213,6 +6069,7 @@ socket.on(
                 "SYSTEM NOMINAL"
             );
 
+
             setText(
                 "alert-sub",
                 "Environmental conditions are currently within the good range."
@@ -5227,6 +6084,7 @@ socket.on(
                 "ELEVATED CONDITIONS"
             );
 
+
             setText(
                 "alert-sub",
                 "Air quality is satisfactory but environmental signals are elevated."
@@ -5239,6 +6097,7 @@ socket.on(
                 "AIR QUALITY WARNING"
             );
 
+
             setText(
                 "alert-sub",
                 "The current sensor-derived AQI exceeds the normal operating range."
@@ -5247,7 +6106,7 @@ socket.on(
 
 
         /* -------------------------------------------------
-           HISTORY CHART
+           HISTORY
         ------------------------------------------------- */
 
         if (
