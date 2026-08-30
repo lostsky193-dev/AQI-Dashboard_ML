@@ -56,31 +56,64 @@ FORECAST_MODEL_PATH = os.path.join(
 
 
 # =====================================================
+# DEFAULT FORECAST FEATURES
+# =====================================================
+
+DEFAULT_FORECAST_FEATURES = [
+    "aqi",
+    "pm25",
+    "pm10",
+    "rel_humidity",
+    "temperature",
+    "hour",
+    "month",
+    "latitude",
+    "longitude"
+]
+
+
+# =====================================================
+# INITIAL MODEL VALUES
+# =====================================================
+
+category_model = None
+
+forecast_models = None
+
+model_1h = None
+model_2h = None
+model_3h = None
+
+FORECAST_FEATURES = DEFAULT_FORECAST_FEATURES.copy()
+
+
+# =====================================================
 # LOAD AQI CATEGORY MODEL
 # =====================================================
 
 try:
 
-    category_model = joblib.load(
-        CATEGORY_MODEL_PATH
-    )
+    if os.path.exists(CATEGORY_MODEL_PATH):
 
-    print(
-        "AQI category ML model loaded successfully."
-    )
+        category_model = joblib.load(
+            CATEGORY_MODEL_PATH
+        )
 
-except FileNotFoundError:
+        print(
+            "AQI category ML model loaded successfully."
+        )
 
-    print(
-        "ERROR: aqi_category_model.pkl not found."
-    )
+    else:
 
-    print(
-        "Expected path:",
-        CATEGORY_MODEL_PATH
-    )
+        print(
+            "WARNING: aqi_category_model.pkl not found."
+        )
 
-    category_model = None
+        print(
+            "Expected path:",
+            CATEGORY_MODEL_PATH
+        )
+
 
 except Exception as e:
 
@@ -98,53 +131,47 @@ except Exception as e:
 
 try:
 
-    forecast_models = joblib.load(
-        FORECAST_MODEL_PATH
-    )
+    if os.path.exists(FORECAST_MODEL_PATH):
 
-    model_1h = forecast_models["model_1h"]
-    model_2h = forecast_models["model_2h"]
-    model_3h = forecast_models["model_3h"]
+        forecast_models = joblib.load(
+            FORECAST_MODEL_PATH
+        )
 
-    FORECAST_FEATURES = forecast_models[
-        "features"
-    ]
+        model_1h = forecast_models["model_1h"]
 
-    print(
-        "Future AQI ML models loaded successfully."
-    )
+        model_2h = forecast_models["model_2h"]
 
-    print(
-        "Forecast features:",
-        FORECAST_FEATURES
-    )
+        model_3h = forecast_models["model_3h"]
 
-except FileNotFoundError:
+        FORECAST_FEATURES = forecast_models.get(
+            "features",
+            DEFAULT_FORECAST_FEATURES
+        )
 
-    print(
-        "ERROR: future_aqi_models.pkl not found."
-    )
+        print(
+            "Future AQI ML models loaded successfully."
+        )
 
-    print(
-        "Expected path:",
-        FORECAST_MODEL_PATH
-    )
+        print(
+            "Forecast features:",
+            FORECAST_FEATURES
+        )
 
-    model_1h = None
-    model_2h = None
-    model_3h = None
+    else:
 
-    FORECAST_FEATURES = [
-        "aqi",
-        "pm25",
-        "pm10",
-        "rel_humidity",
-        "temperature",
-        "hour",
-        "month",
-        "latitude",
-        "longitude"
-    ]
+        print(
+            "WARNING: future_aqi_models.pkl not found."
+        )
+
+        print(
+            "Expected path:",
+            FORECAST_MODEL_PATH
+        )
+
+        print(
+            "Future AQI forecasting will be disabled."
+        )
+
 
 except Exception as e:
 
@@ -157,17 +184,9 @@ except Exception as e:
     model_2h = None
     model_3h = None
 
-    FORECAST_FEATURES = [
-        "aqi",
-        "pm25",
-        "pm10",
-        "rel_humidity",
-        "temperature",
-        "hour",
-        "month",
-        "latitude",
-        "longitude"
-    ]
+    FORECAST_FEATURES = (
+        DEFAULT_FORECAST_FEATURES.copy()
+    )
 
 
 # =====================================================
@@ -265,7 +284,7 @@ def classify_present_aqi(present_aqi):
     )
 
     # -------------------------------------------------
-    # Use trained ML classifier when available
+    # USE TRAINED ML MODEL
     # -------------------------------------------------
 
     if category_model is not None:
@@ -294,7 +313,7 @@ def classify_present_aqi(present_aqi):
             )
 
     # -------------------------------------------------
-    # Fallback
+    # FALLBACK
     # -------------------------------------------------
 
     return get_aqi_category(
@@ -316,6 +335,10 @@ def predict_future_aqi(
     longitude
 ):
 
+    # -------------------------------------------------
+    # CHECK MODEL AVAILABILITY
+    # -------------------------------------------------
+
     if (
         model_1h is None
         or model_2h is None
@@ -323,7 +346,7 @@ def predict_future_aqi(
     ):
 
         print(
-            "Future models unavailable."
+            "Future AQI models unavailable."
         )
 
         return []
@@ -338,6 +361,7 @@ def predict_future_aqi(
         now = datetime.now()
 
         current_hour = now.hour
+
         current_month = now.month
 
 
@@ -450,7 +474,10 @@ def predict_future_aqi(
 
             {
                 "hours_ahead": 1,
-                "aqi": prediction_1h,
+
+                "aqi":
+                    prediction_1h,
+
                 "category":
                     get_aqi_category(
                         prediction_1h
@@ -459,7 +486,10 @@ def predict_future_aqi(
 
             {
                 "hours_ahead": 2,
-                "aqi": prediction_2h,
+
+                "aqi":
+                    prediction_2h,
+
                 "category":
                     get_aqi_category(
                         prediction_2h
@@ -468,7 +498,10 @@ def predict_future_aqi(
 
             {
                 "hours_ahead": 3,
-                "aqi": prediction_3h,
+
+                "aqi":
+                    prediction_3h,
+
                 "category":
                     get_aqi_category(
                         prediction_3h
@@ -498,6 +531,36 @@ def index():
     return render_template(
         "index.html"
     )
+
+
+# =====================================================
+# HEALTH CHECK
+# =====================================================
+
+@app.route(
+    "/health",
+    methods=["GET"]
+)
+def health():
+
+    return jsonify({
+
+        "status": "ok",
+
+        "service":
+            "AeroSense AQI Dashboard",
+
+        "category_model":
+            category_model is not None,
+
+        "forecast_model":
+            (
+                model_1h is not None
+                and model_2h is not None
+                and model_3h is not None
+            )
+
+    }), 200
 
 
 # =====================================================
@@ -681,11 +744,6 @@ def upload_data():
 
         # =================================================
         # PRESENT AQI
-        #
-        # IMPORTANT:
-        # This comes directly from ESP32.
-        #
-        # We DO NOT calculate another present AQI.
         # =================================================
 
         if "final_aqi" not in data:
@@ -710,15 +768,6 @@ def upload_data():
 
         # =================================================
         # ML CLASSIFICATION
-        #
-        # ML understands whether the current AQI is:
-        #
-        # Good
-        # Satisfactory
-        # Moderate
-        # Poor
-        # Very Poor
-        # Severe
         # =================================================
 
         present_category = classify_present_aqi(
@@ -835,8 +884,6 @@ def upload_data():
 
         # =================================================
         # AI ADVICE
-        #
-        # Advice is based on PRESENT AQI.
         # =================================================
 
         advice = get_advice(
@@ -875,12 +922,9 @@ def upload_data():
         )
 
 
-        # -------------------------------------------------
-        # IMPORTANT:
-        # Keep ML prediction field for old dashboard
-        # compatibility, BUT it represents the current
-        # ESP32 AQI being classified.
-        # -------------------------------------------------
+        # =================================================
+        # OLD DASHBOARD COMPATIBILITY
+        # =================================================
 
         dashboard_data["ml_prediction"] = (
             present_aqi
@@ -1075,10 +1119,7 @@ def upload_data():
                 "Present AQI classified and future AQI predicted",
 
 
-            # -------------------------------------------------
             # PRESENT AQI
-            # -------------------------------------------------
-
             "present_aqi":
                 present_aqi,
 
@@ -1086,10 +1127,7 @@ def upload_data():
                 present_category,
 
 
-            # -------------------------------------------------
-            # ML CLASSIFICATION
-            # -------------------------------------------------
-
+            # ML
             "ml_prediction":
                 present_aqi,
 
@@ -1097,10 +1135,7 @@ def upload_data():
                 present_category,
 
 
-            # -------------------------------------------------
-            # DASHBOARD COMPATIBILITY
-            # -------------------------------------------------
-
+            # DASHBOARD
             "final_aqi":
                 present_aqi,
 
@@ -1108,18 +1143,12 @@ def upload_data():
                 present_category,
 
 
-            # -------------------------------------------------
             # ADVICE
-            # -------------------------------------------------
-
             "advice":
                 advice,
 
 
-            # -------------------------------------------------
             # FUTURE AQI
-            # -------------------------------------------------
-
             "predicted_1h":
                 (
                     future_forecast[0]["aqi"]
@@ -1148,10 +1177,7 @@ def upload_data():
                 "AeroSense ML",
 
 
-            # -------------------------------------------------
             # GPS
-            # -------------------------------------------------
-
             "gps_fix":
                 gps_fix,
 
@@ -1171,19 +1197,12 @@ def upload_data():
                 maps_url,
 
 
-            # -------------------------------------------------
-            # FULL DASHBOARD DATA
-            # -------------------------------------------------
-
+            # FULL DATA
             "data":
                 dashboard_data
 
         })
 
-
-    # =====================================================
-    # ERROR HANDLING
-    # =====================================================
 
     except Exception as e:
 
@@ -1217,10 +1236,21 @@ def upload_data():
 
 
 # =====================================================
-# RUN SERVER
+# START SERVER WHEN RUN DIRECTLY
 # =====================================================
 
 if __name__ == "__main__":
+
+    port = int(
+        os.environ.get(
+            "PORT",
+            10000
+        )
+    )
+
+    print(
+        f"Starting AeroSense server on 0.0.0.0:{port}"
+    )
 
     socketio.run(
 
@@ -1228,12 +1258,8 @@ if __name__ == "__main__":
 
         host="0.0.0.0",
 
-        port=int(
-            os.environ.get(
-                "PORT",
-                5000
-            )
-        ),
+        port=port,
 
         debug=False
+
     )
