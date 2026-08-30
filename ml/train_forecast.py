@@ -41,6 +41,7 @@ print("Loading dataset...")
 df = pd.read_csv(CSV_PATH)
 
 print("Dataset shape:", df.shape)
+
 print("Columns:")
 print(df.columns.tolist())
 
@@ -55,8 +56,11 @@ df["date"] = pd.to_datetime(
 )
 
 df["year"] = df["date"].dt.year
+
 df["month"] = df["date"].dt.month
+
 df["day"] = df["date"].dt.day
+
 
 df["hour"] = pd.to_numeric(
     df["hour"],
@@ -145,21 +149,36 @@ df["aqi_plus_3h"] = (
 # =====================================================
 
 FEATURES = [
+
     "aqi",
+
     "pm25",
+
     "pm10",
+
     "rel_humidity",
+
     "temperature",
+
     "hour",
+
     "month",
+
     "latitude",
+
     "longitude"
+
 ]
 
+
 TARGETS = [
+
     "aqi_plus_1h",
+
     "aqi_plus_2h",
+
     "aqi_plus_3h"
+
 ]
 
 
@@ -171,6 +190,7 @@ forecast_df = df.dropna(
     subset=FEATURES + TARGETS
 ).copy()
 
+
 print(
     "Forecast training rows:",
     len(forecast_df)
@@ -179,9 +199,17 @@ print(
 
 X = forecast_df[FEATURES]
 
-y1 = forecast_df["aqi_plus_1h"]
-y2 = forecast_df["aqi_plus_2h"]
-y3 = forecast_df["aqi_plus_3h"]
+y1 = forecast_df[
+    "aqi_plus_1h"
+]
+
+y2 = forecast_df[
+    "aqi_plus_2h"
+]
+
+y3 = forecast_df[
+    "aqi_plus_3h"
+]
 
 
 # =====================================================
@@ -195,12 +223,14 @@ X_train, X_test, y1_train, y1_test = train_test_split(
     random_state=42
 )
 
+
 _, _, y2_train, y2_test = train_test_split(
     X,
     y2,
     test_size=0.2,
     random_state=42
 )
+
 
 _, _, y3_train, y3_test = train_test_split(
     X,
@@ -213,25 +243,56 @@ _, _, y3_train, y3_test = train_test_split(
 # =====================================================
 # FUTURE AQI MODELS
 #
-# Reduced to 10 trees to keep model size small.
+# Optimized for low-memory Render deployment.
+#
+# 5 trees
+# max_depth=15
+# min_samples_leaf=5
+# n_jobs=1
 # =====================================================
 
 model_1h = RandomForestRegressor(
-    n_estimators=10,
+
+    n_estimators=5,
+
+    max_depth=15,
+
+    min_samples_leaf=5,
+
     random_state=42,
-    n_jobs=-1
+
+    n_jobs=1
+
 )
+
 
 model_2h = RandomForestRegressor(
-    n_estimators=10,
+
+    n_estimators=5,
+
+    max_depth=15,
+
+    min_samples_leaf=5,
+
     random_state=42,
-    n_jobs=-1
+
+    n_jobs=1
+
 )
 
+
 model_3h = RandomForestRegressor(
-    n_estimators=10,
+
+    n_estimators=5,
+
+    max_depth=15,
+
+    min_samples_leaf=5,
+
     random_state=42,
-    n_jobs=-1
+
+    n_jobs=1
+
 )
 
 
@@ -239,19 +300,25 @@ model_3h = RandomForestRegressor(
 # TRAIN FORECAST MODELS
 # =====================================================
 
+print()
 print("Training +1 hour model...")
+
 model_1h.fit(
     X_train,
     y1_train
 )
 
+
 print("Training +2 hour model...")
+
 model_2h.fit(
     X_train,
     y2_train
 )
 
+
 print("Training +3 hour model...")
+
 model_3h.fit(
     X_train,
     y3_train
@@ -262,11 +329,21 @@ model_3h.fit(
 # EVALUATION
 # =====================================================
 
-pred1 = model_1h.predict(X_test)
+print()
+print("Evaluating forecast models...")
 
-pred2 = model_2h.predict(X_test)
 
-pred3 = model_3h.predict(X_test)
+pred1 = model_1h.predict(
+    X_test
+)
+
+pred2 = model_2h.predict(
+    X_test
+)
+
+pred3 = model_3h.predict(
+    X_test
+)
 
 
 mae1 = mean_absolute_error(
@@ -290,15 +367,18 @@ print("====================================")
 print("FUTURE AQI MODEL RESULTS")
 print("====================================")
 
+
 print(
     "MAE +1 hour:",
     round(mae1, 2)
 )
 
+
 print(
     "MAE +2 hour:",
     round(mae2, 2)
 )
+
 
 print(
     "MAE +3 hour:",
@@ -309,26 +389,36 @@ print(
 # =====================================================
 # SAVE FORECAST MODELS
 #
-# Compression level 6 reduces file size further.
+# Compression level 6.
 # =====================================================
 
 forecast_models = {
 
-    "features": FEATURES,
+    "features":
+        FEATURES,
 
-    "model_1h": model_1h,
+    "model_1h":
+        model_1h,
 
-    "model_2h": model_2h,
+    "model_2h":
+        model_2h,
 
-    "model_3h": model_3h
+    "model_3h":
+        model_3h
+
 }
 
 
 joblib.dump(
+
     forecast_models,
+
     FORECAST_MODEL_PATH,
+
     protocol=5,
+
     compress=6
+
 )
 
 
@@ -340,31 +430,41 @@ print(
 
 
 # =====================================================
-# PRESENT AQI CLASSIFIER
-#
-# AQI value -> category
+# PRESENT AQI CATEGORY
 # =====================================================
 
 def aqi_category(aqi):
 
+    aqi = float(aqi)
+
     if aqi <= 50:
+
         return "Good"
 
     elif aqi <= 100:
+
         return "Satisfactory"
 
     elif aqi <= 200:
+
         return "Moderate"
 
     elif aqi <= 300:
+
         return "Poor"
 
     elif aqi <= 400:
+
         return "Very Poor"
 
     else:
+
         return "Severe"
 
+
+# =====================================================
+# PREPARE CLASSIFIER DATA
+# =====================================================
 
 classifier_df = df.dropna(
     subset=["aqi"]
@@ -372,14 +472,17 @@ classifier_df = df.dropna(
 
 
 classifier_df["category"] = (
+
     classifier_df["aqi"]
     .apply(aqi_category)
+
 )
 
 
 X_class = classifier_df[
     ["aqi"]
 ]
+
 
 y_class = classifier_df[
     "category"
@@ -391,11 +494,17 @@ y_class = classifier_df[
 # =====================================================
 
 Xc_train, Xc_test, yc_train, yc_test = train_test_split(
+
     X_class,
+
     y_class,
+
     test_size=0.2,
+
     random_state=42,
+
     stratify=y_class
+
 )
 
 
@@ -404,9 +513,13 @@ Xc_train, Xc_test, yc_train, yc_test = train_test_split(
 # =====================================================
 
 category_model = RandomForestClassifier(
-    n_estimators=100,
+
+    n_estimators=50,
+
     random_state=42,
-    n_jobs=-1
+
+    n_jobs=1
+
 )
 
 
@@ -417,8 +530,11 @@ print(
 
 
 category_model.fit(
+
     Xc_train,
+
     yc_train
+
 )
 
 
@@ -427,20 +543,32 @@ category_model.fit(
 # =====================================================
 
 category_pred = category_model.predict(
+
     Xc_test
+
 )
 
 
 accuracy = accuracy_score(
+
     yc_test,
+
     category_pred
+
 )
 
 
 print(
+
     "Category classifier accuracy:",
-    round(accuracy * 100, 2),
+
+    round(
+        accuracy * 100,
+        2
+    ),
+
     "%"
+
 )
 
 
@@ -449,45 +577,68 @@ print(
 # =====================================================
 
 joblib.dump(
+
     category_model,
+
     CLASSIFIER_PATH,
-    protocol=5
+
+    protocol=5,
+
+    compress=3
+
 )
 
 
 print(
+
     "Saved:",
+
     CLASSIFIER_PATH
+
 )
 
 
 # =====================================================
-# LOCAL TEST
+# LOCAL CLASSIFIER TEST
 # =====================================================
 
 test_aqi = 33
 
 
 test_category = category_model.predict(
+
     pd.DataFrame(
-        [{"aqi": test_aqi}]
+        [
+            {
+                "aqi": test_aqi
+            }
+        ]
     )
+
 )[0]
 
 
 print()
 print("====================================")
-print("TEST")
+print("PRESENT AQI TEST")
 print("====================================")
 
-print(
-    "Current AQI:",
-    test_aqi
-)
 
 print(
+
+    "Current AQI:",
+
+    test_aqi
+
+)
+
+
+print(
+
     "Category:",
+
     test_category
+
 )
 
 
@@ -498,61 +649,153 @@ print(
 test_row = forecast_df.iloc[0]
 
 
-test_input = pd.DataFrame([{
+test_input = pd.DataFrame(
+    [
+        {
 
-    "aqi": test_row["aqi"],
+            "aqi":
+                test_row["aqi"],
 
-    "pm25": test_row["pm25"],
+            "pm25":
+                test_row["pm25"],
 
-    "pm10": test_row["pm10"],
+            "pm10":
+                test_row["pm10"],
 
-    "rel_humidity": test_row["rel_humidity"],
+            "rel_humidity":
+                test_row["rel_humidity"],
 
-    "temperature": test_row["temperature"],
+            "temperature":
+                test_row["temperature"],
 
-    "hour": test_row["hour"],
+            "hour":
+                test_row["hour"],
 
-    "month": test_row["month"],
+            "month":
+                test_row["month"],
 
-    "latitude": test_row["latitude"],
+            "latitude":
+                test_row["latitude"],
 
-    "longitude": test_row["longitude"]
+            "longitude":
+                test_row["longitude"]
 
-}])
+        }
+    ]
+)
 
 
 future1 = model_1h.predict(
+
     test_input
+
 )[0]
 
 
 future2 = model_2h.predict(
+
     test_input
+
 )[0]
 
 
 future3 = model_3h.predict(
+
     test_input
+
 )[0]
 
 
 print()
-print("Future AQI test:")
+print("====================================")
+print("FUTURE AQI TEST")
+print("====================================")
+
 
 print(
+
     "+1 hour:",
-    round(float(future1))
+
+    round(
+        float(future1)
+    )
+
 )
 
+
 print(
+
     "+2 hours:",
-    round(float(future2))
+
+    round(
+        float(future2)
+    )
+
 )
 
+
 print(
+
     "+3 hours:",
-    round(float(future3))
+
+    round(
+        float(future3)
+    )
+
 )
+
+
+# =====================================================
+# MODEL SIZE
+# =====================================================
+
+if os.path.exists(
+    FORECAST_MODEL_PATH
+):
+
+    model_size_bytes = os.path.getsize(
+        FORECAST_MODEL_PATH
+    )
+
+    model_size_mb = (
+        model_size_bytes
+        /
+        (1024 * 1024)
+    )
+
+    print()
+    print(
+        "Forecast model size:",
+        round(
+            model_size_mb,
+            2
+        ),
+        "MB"
+    )
+
+
+if os.path.exists(
+    CLASSIFIER_PATH
+):
+
+    classifier_size_bytes = os.path.getsize(
+        CLASSIFIER_PATH
+    )
+
+    classifier_size_mb = (
+        classifier_size_bytes
+        /
+        (1024 * 1024)
+    )
+
+    print(
+        "Category model size:",
+        round(
+            classifier_size_mb,
+            2
+        ),
+        "MB"
+    )
 
 
 # =====================================================
