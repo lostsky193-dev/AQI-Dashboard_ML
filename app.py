@@ -14,20 +14,22 @@ socketio = SocketIO(
     cors_allowed_origins="*"
 )
 
-
 # =====================================================
 # LOAD ML MODEL
 # =====================================================
 
 MODEL_PATH = os.path.join(
-    os.path.dirname(__file__),
+    os.path.dirname(os.path.abspath(__file__)),
     "ml",
     "aerosense_aqi_model.pkl"
 )
 
-model = joblib.load(MODEL_PATH)
-
-print("AeroSense ML model loaded successfully.")
+try:
+    model = joblib.load(MODEL_PATH)
+    print("AeroSense ML model loaded successfully.")
+except Exception as e:
+    print("ERROR LOADING ML MODEL:", e)
+    raise
 
 
 # =====================================================
@@ -62,7 +64,6 @@ def get_aqi_category(aqi):
 def get_advice(aqi):
 
     if aqi <= 50:
-
         return [
             "Air quality is good.",
             "Normal outdoor activities are safe.",
@@ -70,7 +71,6 @@ def get_advice(aqi):
         ]
 
     elif aqi <= 100:
-
         return [
             "Air quality is satisfactory.",
             "Most people can continue normal outdoor activities.",
@@ -78,7 +78,6 @@ def get_advice(aqi):
         ]
 
     elif aqi <= 200:
-
         return [
             "Reduce prolonged outdoor exposure.",
             "Sensitive individuals should take extra care.",
@@ -86,7 +85,6 @@ def get_advice(aqi):
         ]
 
     elif aqi <= 300:
-
         return [
             "Avoid prolonged outdoor activity.",
             "Sensitive individuals should remain indoors when possible.",
@@ -94,7 +92,6 @@ def get_advice(aqi):
         ]
 
     elif aqi <= 400:
-
         return [
             "Avoid outdoor activity as much as possible.",
             "Keep windows and doors closed during high-pollution periods.",
@@ -102,7 +99,6 @@ def get_advice(aqi):
         ]
 
     else:
-
         return [
             "Avoid outdoor activity.",
             "Remain indoors and keep exposure to polluted air minimal.",
@@ -114,26 +110,30 @@ def get_advice(aqi):
 # HOME
 # =====================================================
 
-@app.route('/')
+@app.route("/")
 def index():
-
-    return render_template('index.html')
+    return render_template("index.html")
 
 
 # =====================================================
 # ESP32 DATA UPLOAD
 # =====================================================
 
-@app.route('/api/upload', methods=['POST'])
+@app.route("/api/upload", methods=["POST"])
 def upload_data():
 
     try:
 
-        data = request.json
+        data = request.get_json(silent=True)
+
+        if not data:
+            return jsonify({
+                "status": "error",
+                "message": "No JSON data received"
+            }), 400
 
         print("\nReceived from ESP32:")
         print(data)
-
 
         # -------------------------------------------------
         # GET SENSOR VALUES
@@ -144,9 +144,8 @@ def upload_data():
         humidity = float(data.get("rel_humidity", 0))
         temperature = float(data.get("temperature", 0))
 
-
         # -------------------------------------------------
-        # ML PREDICTION
+        # ML INPUT
         # -------------------------------------------------
 
         input_data = pd.DataFrame([{
@@ -156,10 +155,12 @@ def upload_data():
             "temperature": temperature
         }])
 
+        # -------------------------------------------------
+        # ML PREDICTION
+        # -------------------------------------------------
+
         predicted_aqi = model.predict(input_data)[0]
-
-        predicted_aqi = round(predicted_aqi)
-
+        predicted_aqi = round(float(predicted_aqi))
 
         # -------------------------------------------------
         # CATEGORY
@@ -167,38 +168,28 @@ def upload_data():
 
         category = get_aqi_category(predicted_aqi)
 
-
         # -------------------------------------------------
         # ADVICE
         # -------------------------------------------------
 
         advice = get_advice(predicted_aqi)
 
-
         # -------------------------------------------------
-        # ADD ML RESULTS TO EXISTING ESP32 DATA
+        # ADD RESULTS
         # -------------------------------------------------
 
         data["ml_prediction"] = predicted_aqi
-
         data["ml_category"] = category
-
         data["advice"] = advice
 
-
         # -------------------------------------------------
-        # BROADCAST TO DASHBOARD
+        # SEND TO DASHBOARD
         # -------------------------------------------------
 
-        socketio.emit(
-            'live_data',
-            data
-        )
-
+        socketio.emit("live_data", data)
 
         print("ML Predicted AQI:", predicted_aqi)
         print("Category:", category)
-
 
         return jsonify({
             "status": "success",
@@ -207,7 +198,6 @@ def upload_data():
             "ml_category": category,
             "advice": advice
         })
-
 
     except Exception as e:
 
@@ -220,13 +210,14 @@ def upload_data():
 
 
 # =====================================================
-# RUN SERVER
+# LOCAL RUN
 # =====================================================
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+
     socketio.run(
         app,
-        host='0.0.0.0',
-        port=int(os.environ.get('PORT', 5000)),
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 5000)),
         debug=False
     )
