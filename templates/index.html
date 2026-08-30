@@ -891,9 +891,21 @@ body {
     </div>
 
 </section>
+<!-- AI ADVICE -->
+<section class="glass advice-card" style="padding:20px;border-radius:22px;margin-top:18px;">
+    <div style="font-size:.64rem;text-transform:uppercase;letter-spacing:1.6px;color:var(--muted);font-weight:700;">
+        AI HEALTH ADVICE
+    </div>
 
+    <div id="advice-list" style="margin-top:14px;">
+        <div style="color:var(--muted);font-size:.72rem;">
+            Waiting for ML analysis...
+        </div>
+    </div>
+</section>
 
 <!-- ALERT -->
+
 
 <div class="alert-strip glass">
     <div class="alert-icon">◈</div>
@@ -1402,6 +1414,31 @@ socket.on("live_data", async (data) => {
     /* -------------------- GPS -------------------- */
 
     await updateGPS(data);
+   /* -------------------- AI ADVICE -------------------- */
+
+if (Array.isArray(data.advice)) {
+
+    const adviceList = document.getElementById("advice-list");
+
+    if (adviceList) {
+
+        adviceList.innerHTML = data.advice.map(item => `
+            <div style="
+                padding:11px 12px;
+                margin-bottom:8px;
+                border-radius:12px;
+                background:rgba(255,255,255,.035);
+                border:1px solid rgba(255,255,255,.07);
+                color:var(--text);
+                font-size:.70rem;
+                line-height:1.5;
+            ">
+                ◈ ${item}
+            </div>
+        `).join("");
+
+    }
+}
 
     /* -------------------- TELEMETRY STATE -------------------- */
 
