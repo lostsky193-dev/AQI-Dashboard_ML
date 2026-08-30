@@ -8,9 +8,7 @@ from flask_cors import CORS
 import joblib
 import pandas as pd
 import os
-import json
-import urllib.request
-import urllib.parse
+from datetime import datetime
 
 
 # =====================================================
@@ -29,25 +27,115 @@ socketio = SocketIO(
 
 
 # =====================================================
-# LOAD ML MODEL
+# PATHS
 # =====================================================
 
-MODEL_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    "ml",
-    "aerosense_aqi_model.pkl"
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
 )
 
-model = joblib.load(MODEL_PATH)
-
-print("AeroSense ML model loaded successfully.")
+ML_DIR = os.path.join(
+    BASE_DIR,
+    "ml"
+)
 
 
 # =====================================================
-# AQI CATEGORY
+# LOAD PRESENT AQI CATEGORY MODEL
+# =====================================================
+
+CATEGORY_MODEL_PATH = os.path.join(
+    ML_DIR,
+    "aqi_category_model.pkl"
+)
+
+try:
+
+    category_model = joblib.load(
+        CATEGORY_MODEL_PATH
+    )
+
+    print(
+        "AQI category ML model loaded successfully."
+    )
+
+except Exception as e:
+
+    print(
+        "ERROR loading AQI category model:",
+        repr(e)
+    )
+
+    raise
+
+
+# =====================================================
+# LOAD FUTURE AQI MODELS
+# =====================================================
+
+FORECAST_MODEL_PATH = os.path.join(
+    ML_DIR,
+    "future_aqi_models.pkl"
+)
+
+try:
+
+    forecast_models = joblib.load(
+        FORECAST_MODEL_PATH
+    )
+
+    print(
+        "Future AQI ML models loaded successfully."
+    )
+
+except Exception as e:
+
+    print(
+        "ERROR loading future AQI models:",
+        repr(e)
+    )
+
+    raise
+
+
+# =====================================================
+# EXTRACT FUTURE MODELS
+# =====================================================
+
+try:
+
+    model_1h = forecast_models["model_1h"]
+
+    model_2h = forecast_models["model_2h"]
+
+    model_3h = forecast_models["model_3h"]
+
+    FORECAST_FEATURES = forecast_models[
+        "features"
+    ]
+
+    print(
+        "Forecast features:",
+        FORECAST_FEATURES
+    )
+
+except Exception as e:
+
+    print(
+        "ERROR reading forecast models:",
+        repr(e)
+    )
+
+    raise
+
+
+# =====================================================
+# AQI CATEGORY FALLBACK
 # =====================================================
 
 def get_aqi_category(aqi):
+
+    aqi = float(aqi)
 
     if aqi <= 50:
         return "Good"
@@ -69,10 +157,12 @@ def get_aqi_category(aqi):
 
 
 # =====================================================
-# AI ADVICE
+# AI HEALTH ADVICE
 # =====================================================
 
 def get_advice(aqi):
+
+    aqi = float(aqi)
 
     if aqi <= 50:
 
@@ -124,149 +214,166 @@ def get_advice(aqi):
 
 
 # =====================================================
-# OPEN-METEO FUTURE AIR QUALITY FORECAST
+# PREDICT FUTURE AQI
 # =====================================================
 
-def get_location_forecast(latitude, longitude):
+def predict_future_aqi(
+    present_aqi,
+    pm25,
+    pm10,
+    humidity,
+    temperature,
+    latitude,
+    longitude
+):
 
     try:
 
-        # -------------------------------------------------
-        # Validate coordinates
-        # -------------------------------------------------
+        now = datetime.now()
 
-        latitude = float(latitude)
-        longitude = float(longitude)
-
-        if not (-90 <= latitude <= 90):
-            return None
-
-        if not (-180 <= longitude <= 180):
-            return None
+        current_hour = now.hour
+        current_month = now.month
 
         # -------------------------------------------------
-        # Open-Meteo Air Quality API
-        #
-        # Forecast is location based using GPS coordinates.
-        #
-        # We request 7 hourly points so we can show:
-        # +1 hour
-        # +3 hours
-        # +6 hours
+        # Build input exactly as used during training
         # -------------------------------------------------
 
-        params = {
-            "latitude": latitude,
-            "longitude": longitude,
-            "hourly": "us_aqi,pm2_5,pm10,ozone",
-            "forecast_hours": 7,
-            "timezone": "auto"
-        }
+        input_data = pd.DataFrame([{
 
-        url = (
-            "https://air-quality-api.open-meteo.com/v1/air-quality?"
-            + urllib.parse.urlencode(params)
-        )
+            "aqi":
+                float(present_aqi),
 
-        print("Requesting location forecast:")
-        print(url)
+            "pm25":
+                float(pm25),
 
-        req = urllib.request.Request(
-            url,
-            headers={
-                "User-Agent": "AeroSense-AQI/1.0"
-            }
-        )
+            "pm10":
+                float(pm10),
 
-        with urllib.request.urlopen(
-            req,
-            timeout=10
-        ) as response:
+            "rel_humidity":
+                float(humidity),
 
-            result = json.loads(
-                response.read().decode("utf-8")
-            )
+            "temperature":
+                float(temperature),
 
-        # -------------------------------------------------
-        # Check response
-        # -------------------------------------------------
+            "hour":
+                float(current_hour),
 
-        hourly = result.get("hourly", {})
+            "month":
+                float(current_month),
 
-        times = hourly.get("time", [])
-        aqi_values = hourly.get("us_aqi", [])
-        pm25_values = hourly.get("pm2_5", [])
-        pm10_values = hourly.get("pm10", [])
-        ozone_values = hourly.get("ozone", [])
+            "latitude":
+                float(latitude),
 
-        if len(aqi_values) == 0:
-            print("No forecast AQI returned.")
-            return None
+            "longitude":
+                float(longitude)
+
+        }])
+
 
         # -------------------------------------------------
-        # Build +1h / +3h / +6h forecast
+        # IMPORTANT:
+        # Keep EXACT training feature order
         # -------------------------------------------------
 
-        forecast = []
+        input_data = input_data[
+            FORECAST_FEATURES
+        ]
 
-        requested_hours = [1, 3, 6]
 
-        for hour in requested_hours:
+        # -------------------------------------------------
+        # +1 HOUR
+        # -------------------------------------------------
 
-            if hour >= len(aqi_values):
-                continue
+        prediction_1h = model_1h.predict(
+            input_data
+        )[0]
 
-            future_aqi = aqi_values[hour]
-
-            forecast.append({
-                "hours_ahead": hour,
-                "time": (
-                    times[hour]
-                    if hour < len(times)
-                    else None
-                ),
-                "aqi": (
-                    round(float(future_aqi))
-                    if future_aqi is not None
-                    else None
-                ),
-                "category": (
-                    get_aqi_category(round(float(future_aqi)))
-                    if future_aqi is not None
-                    else "Unavailable"
-                ),
-                "pm25": (
-                    round(float(pm25_values[hour]), 1)
-                    if hour < len(pm25_values)
-                    and pm25_values[hour] is not None
-                    else None
-                ),
-                "pm10": (
-                    round(float(pm10_values[hour]), 1)
-                    if hour < len(pm10_values)
-                    and pm10_values[hour] is not None
-                    else None
-                ),
-                "ozone": (
-                    round(float(ozone_values[hour]), 1)
-                    if hour < len(ozone_values)
-                    and ozone_values[hour] is not None
-                    else None
+        prediction_1h = max(
+            0,
+            round(
+                float(
+                    prediction_1h
                 )
-            })
+            )
+        )
 
-        return {
-            "source": "Open-Meteo",
-            "latitude": latitude,
-            "longitude": longitude,
-            "forecast": forecast
-        }
+
+        # -------------------------------------------------
+        # +2 HOURS
+        # -------------------------------------------------
+
+        prediction_2h = model_2h.predict(
+            input_data
+        )[0]
+
+        prediction_2h = max(
+            0,
+            round(
+                float(
+                    prediction_2h
+                )
+            )
+        )
+
+
+        # -------------------------------------------------
+        # +3 HOURS
+        # -------------------------------------------------
+
+        prediction_3h = model_3h.predict(
+            input_data
+        )[0]
+
+        prediction_3h = max(
+            0,
+            round(
+                float(
+                    prediction_3h
+                )
+            )
+        )
+
+
+        return [
+
+            {
+                "hours_ahead": 1,
+                "aqi": prediction_1h,
+                "category":
+                    get_aqi_category(
+                        prediction_1h
+                    )
+            },
+
+            {
+                "hours_ahead": 2,
+                "aqi": prediction_2h,
+                "category":
+                    get_aqi_category(
+                        prediction_2h
+                    )
+            },
+
+            {
+                "hours_ahead": 3,
+                "aqi": prediction_3h,
+                "category":
+                    get_aqi_category(
+                        prediction_3h
+                    )
+            }
+
+        ]
+
 
     except Exception as e:
 
-        print("Forecast error:", e)
+        print(
+            "FUTURE AQI PREDICTION ERROR:",
+            repr(e)
+        )
 
-        return None
+        return []
 
 
 # =====================================================
@@ -276,339 +383,114 @@ def get_location_forecast(latitude, longitude):
 @app.route("/")
 def index():
 
-    return render_template("index.html")
+    return render_template(
+        "index.html"
+    )
 
 
 # =====================================================
-# OPTIONAL FORECAST ENDPOINT
+# OPTIONAL FORECAST TEST ENDPOINT
 # =====================================================
 
-@app.route("/api/forecast", methods=["GET"])
+@app.route(
+    "/api/forecast",
+    methods=["GET"]
+)
 def forecast_endpoint():
 
     try:
 
-        latitude = request.args.get("latitude")
-        longitude = request.args.get("longitude")
-
-        if latitude is None or longitude is None:
-
-            return jsonify({
-                "status": "error",
-                "message": "latitude and longitude are required"
-            }), 400
-
-        forecast = get_location_forecast(
-            latitude,
-            longitude
-        )
-
-        if forecast is None:
-
-            return jsonify({
-                "status": "error",
-                "message": "Unable to retrieve forecast"
-            }), 502
-
-        return jsonify({
-            "status": "success",
-            "forecast": forecast
-        })
-
-    except Exception as e:
-
-        print("Forecast endpoint error:", e)
-
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 400
-
-
-# =====================================================
-# ESP32 DATA UPLOAD
-# =====================================================
-
-@app.route("/api/upload", methods=["POST"])
-def upload_data():
-
-    try:
-
-        # -------------------------------------------------
-        # GET JSON DATA
-        # -------------------------------------------------
-
-        data = request.get_json(silent=True)
-
-        if not data:
-
-            return jsonify({
-                "status": "error",
-                "message": "No JSON data received"
-            }), 400
-
-        print("\nReceived from ESP32:")
-        print(data)
-
-        # -------------------------------------------------
-        # GET SENSOR VALUES
-        #
-        # ESP32 currently sends:
-        # pm25
-        # pm10
-        # temp
-        # hum
-        # -------------------------------------------------
-
-        pm25 = float(
-            data.get("pm25", 0)
-        )
-
-        pm10 = float(
-            data.get("pm10", 0)
-        )
-
-        humidity = float(
-            data.get("hum", 0)
-        )
-
-        temperature = float(
-            data.get("temp", 0)
-        )
-
-        # -------------------------------------------------
-        # ML INPUT
-        # -------------------------------------------------
-
-        input_data = pd.DataFrame([{
-            "pm25": pm25,
-            "pm10": pm10,
-            "rel_humidity": humidity,
-            "temperature": temperature
-        }])
-
-        # -------------------------------------------------
-        # PRESENT AQI FROM YOUR ML MODEL
-        # -------------------------------------------------
-
-        predicted_aqi = model.predict(
-            input_data
-        )[0]
-
-        predicted_aqi = round(
-            float(predicted_aqi)
-        )
-
-        # -------------------------------------------------
-        # PRESENT AQI CATEGORY
-        # -------------------------------------------------
-
-        category = get_aqi_category(
-            predicted_aqi
-        )
-
-        # -------------------------------------------------
-        # PRESENT AQI ADVICE
-        # -------------------------------------------------
-
-        advice = get_advice(
-            predicted_aqi
-        )
-
-        # -------------------------------------------------
-        # GPS DATA FROM ESP32
-        # -------------------------------------------------
-
-        gps_fix = data.get(
-            "gps_fix",
-            False
-        )
-
-        latitude = data.get(
+        latitude = request.args.get(
             "latitude"
         )
 
-        longitude = data.get(
+        longitude = request.args.get(
             "longitude"
         )
 
-        # -------------------------------------------------
-        # FUTURE LOCATION FORECAST
-        # -------------------------------------------------
+        present_aqi = request.args.get(
+            "aqi"
+        )
 
-        location_forecast = None
+        pm25 = request.args.get(
+            "pm25",
+            0
+        )
+
+        pm10 = request.args.get(
+            "pm10",
+            0
+        )
+
+        humidity = request.args.get(
+            "hum",
+            0
+        )
+
+        temperature = request.args.get(
+            "temp",
+            0
+        )
+
 
         if (
-            gps_fix is True
-            and latitude is not None
-            and longitude is not None
+            latitude is None
+            or longitude is None
+            or present_aqi is None
         ):
 
-            location_forecast = get_location_forecast(
-                latitude,
-                longitude
-            )
+            return jsonify({
 
-        # -------------------------------------------------
-        # ADD ML RESULTS
-        # -------------------------------------------------
+                "status":
+                    "error",
 
-        data["ml_prediction"] = predicted_aqi
-        data["ml_category"] = category
-        data["advice"] = advice
+                "message":
+                    "latitude, longitude and aqi are required"
 
-        # -------------------------------------------------
-        # DASHBOARD FIELDS
-        # -------------------------------------------------
+            }), 400
 
-        data["final_aqi"] = predicted_aqi
-        data["category"] = category
 
-        data["temp"] = temperature
-        data["hum"] = humidity
+        future_forecast = predict_future_aqi(
 
-        data["dominant"] = "ML AQI"
+            present_aqi=present_aqi,
 
-        # -------------------------------------------------
-        # FUTURE FORECAST
-        # -------------------------------------------------
+            pm25=pm25,
 
-        if location_forecast is not None:
+            pm10=pm10,
 
-            data["future_forecast"] = (
-                location_forecast["forecast"]
-            )
+            humidity=humidity,
 
-            data["forecast_source"] = (
-                location_forecast["source"]
-            )
+            temperature=temperature,
 
-        else:
+            latitude=latitude,
 
-            data["future_forecast"] = []
-            data["forecast_source"] = None
+            longitude=longitude
 
-        # -------------------------------------------------
-        # BROADCAST TO DASHBOARD
-        # -------------------------------------------------
-
-        socketio.emit(
-            "live_data",
-            data
         )
 
-        # -------------------------------------------------
-        # PRINT
-        # -------------------------------------------------
-
-        print(
-            "Present ML AQI:",
-            predicted_aqi
-        )
-
-        print(
-            "Present category:",
-            category
-        )
-
-        print(
-            "Advice:",
-            advice
-        )
-
-        print(
-            "GPS fix:",
-            gps_fix
-        )
-
-        if latitude is not None:
-            print(
-                "Latitude:",
-                latitude
-            )
-
-        if longitude is not None:
-            print(
-                "Longitude:",
-                longitude
-            )
-
-        if location_forecast is not None:
-
-            print(
-                "Future forecast:",
-                location_forecast["forecast"]
-            )
-
-        # -------------------------------------------------
-        # RESPONSE
-        # -------------------------------------------------
 
         return jsonify({
 
             "status":
                 "success",
 
-            "message":
-                "Data received and AQI analysis generated",
-
-            # Present AQI
             "present_aqi":
-                predicted_aqi,
+                round(float(present_aqi)),
 
-            "present_category":
-                category,
-
-            # Keep existing names
-            "ml_prediction":
-                predicted_aqi,
-
-            "ml_category":
-                category,
-
-            "final_aqi":
-                predicted_aqi,
-
-            "category":
-                category,
-
-            "advice":
-                advice,
-
-            # GPS
-            "gps_fix":
-                gps_fix,
-
-            "latitude":
-                latitude,
-
-            "longitude":
-                longitude,
-
-            # Future
             "future_forecast":
-                (
-                    location_forecast["forecast"]
-                    if location_forecast is not None
-                    else []
-                ),
+                future_forecast,
 
             "forecast_source":
-                (
-                    location_forecast["source"]
-                    if location_forecast is not None
-                    else None
-                ),
+                "AeroSense ML"
 
-            "data":
-                data
         })
+
 
     except Exception as e:
 
         print(
-            "UPLOAD ERROR:",
-            e
+            "FORECAST ENDPOINT ERROR:",
+            repr(e)
         )
 
         return jsonify({
@@ -618,6 +500,632 @@ def upload_data():
 
             "message":
                 str(e)
+
+        }), 400
+
+
+# =====================================================
+# ESP32 DATA UPLOAD
+# =====================================================
+
+@app.route(
+    "/api/upload",
+    methods=["POST"]
+)
+def upload_data():
+
+    try:
+
+        # =================================================
+        # RECEIVE ESP32 DATA
+        # =================================================
+
+        data = request.get_json(
+            silent=True
+        )
+
+
+        if not data:
+
+            return jsonify({
+
+                "status":
+                    "error",
+
+                "message":
+                    "No JSON data received"
+
+            }), 400
+
+
+        print()
+        print(
+            "======================================"
+        )
+
+        print(
+            "RECEIVED FROM ESP32"
+        )
+
+        print(
+            "======================================"
+        )
+
+        print(
+            data
+        )
+
+
+        # =================================================
+        # PRESENT AQI
+        #
+        # THIS IS THE IMPORTANT PART:
+        #
+        # ESP32 calculates the PRESENT AQI.
+        # Render DOES NOT replace it.
+        # =================================================
+
+        if "final_aqi" not in data:
+
+            return jsonify({
+
+                "status":
+                    "error",
+
+                "message":
+                    "ESP32 final_aqi is missing"
+
+            }), 400
+
+
+        present_aqi = round(
+            float(
+                data["final_aqi"]
+            )
+        )
+
+
+        # =================================================
+        # PRESENT AQI CATEGORY
+        #
+        # ML classifier understands the AQI value.
+        # =================================================
+
+        try:
+
+            category_prediction = (
+                category_model.predict(
+                    pd.DataFrame(
+                        [{
+                            "aqi":
+                                present_aqi
+                        }]
+                    )
+                )[0]
+            )
+
+            present_category = str(
+                category_prediction
+            )
+
+
+        except Exception as classifier_error:
+
+            print(
+                "ML classifier error:",
+                repr(
+                    classifier_error
+                )
+            )
+
+            present_category = (
+                get_aqi_category(
+                    present_aqi
+                )
+            )
+
+
+        # =================================================
+        # SENSOR VALUES
+        # =================================================
+
+        pm25 = float(
+            data.get(
+                "pm25",
+                0
+            )
+        )
+
+        pm10 = float(
+            data.get(
+                "pm10",
+                0
+            )
+        )
+
+        humidity = float(
+            data.get(
+                "hum",
+                0
+            )
+        )
+
+        temperature = float(
+            data.get(
+                "temp",
+                0
+            )
+        )
+
+
+        # =================================================
+        # GPS
+        # =================================================
+
+        gps_fix = (
+            data.get(
+                "gps_fix",
+                False
+            )
+            is True
+        )
+
+
+        latitude = data.get(
+            "latitude"
+        )
+
+        longitude = data.get(
+            "longitude"
+        )
+
+
+        satellites = data.get(
+            "satellites"
+        )
+
+        accuracy = data.get(
+            "accuracy"
+        )
+
+        maps_url = data.get(
+            "maps_url",
+            ""
+        )
+
+
+        # =================================================
+        # FUTURE AQI ML FORECAST
+        # =================================================
+
+        future_forecast = []
+
+
+        if (
+            gps_fix
+            and latitude is not None
+            and longitude is not None
+        ):
+
+            try:
+
+                future_forecast = (
+                    predict_future_aqi(
+
+                        present_aqi=
+                            present_aqi,
+
+                        pm25=
+                            pm25,
+
+                        pm10=
+                            pm10,
+
+                        humidity=
+                            humidity,
+
+                        temperature=
+                            temperature,
+
+                        latitude=
+                            latitude,
+
+                        longitude=
+                            longitude
+                    )
+                )
+
+
+            except Exception as forecast_error:
+
+                print(
+                    "Forecast generation error:",
+                    repr(
+                        forecast_error
+                    )
+                )
+
+                future_forecast = []
+
+
+        # =================================================
+        # AI ADVICE
+        #
+        # BASED ON PRESENT ESP32 AQI
+        # =================================================
+
+        advice = get_advice(
+            present_aqi
+        )
+
+
+        # =================================================
+        # BUILD DASHBOARD DATA
+        # =================================================
+
+        dashboard_data = dict(
+            data
+        )
+
+
+        # -------------------------------------------------
+        # PRESENT AQI
+        # -------------------------------------------------
+
+        dashboard_data["present_aqi"] = (
+            present_aqi
+        )
+
+        dashboard_data["present_category"] = (
+            present_category
+        )
+
+
+        # -------------------------------------------------
+        # ML CATEGORY
+        # -------------------------------------------------
+
+        dashboard_data["ml_category"] = (
+            present_category
+        )
+
+
+        # -------------------------------------------------
+        # DO NOT SAY ML PREDICTED PRESENT AQI
+        #
+        # ml_prediction is kept equal to the device AQI
+        # only for compatibility with the old dashboard/API.
+        # -------------------------------------------------
+
+        dashboard_data["ml_prediction"] = (
+            present_aqi
+        )
+
+
+        # -------------------------------------------------
+        # DASHBOARD GAUGE
+        # -------------------------------------------------
+
+        dashboard_data["final_aqi"] = (
+            present_aqi
+        )
+
+        dashboard_data["category"] = (
+            present_category
+        )
+
+
+        # -------------------------------------------------
+        # ENVIRONMENT
+        # -------------------------------------------------
+
+        dashboard_data["temp"] = (
+            temperature
+        )
+
+        dashboard_data["hum"] = (
+            humidity
+        )
+
+
+        # -------------------------------------------------
+        # DOMINANT
+        # -------------------------------------------------
+
+        dashboard_data["dominant"] = (
+            "ESP32 AQI"
+        )
+
+
+        # -------------------------------------------------
+        # ADVICE
+        # -------------------------------------------------
+
+        dashboard_data["advice"] = (
+            advice
+        )
+
+
+        # -------------------------------------------------
+        # GPS
+        # -------------------------------------------------
+
+        dashboard_data["gps_fix"] = (
+            gps_fix
+        )
+
+        dashboard_data["latitude"] = (
+            latitude
+        )
+
+        dashboard_data["longitude"] = (
+            longitude
+        )
+
+        dashboard_data["satellites"] = (
+            satellites
+        )
+
+        dashboard_data["accuracy"] = (
+            accuracy
+        )
+
+        dashboard_data["maps_url"] = (
+            maps_url
+        )
+
+
+        # -------------------------------------------------
+        # FUTURE FORECAST
+        # -------------------------------------------------
+
+        dashboard_data["future_forecast"] = (
+            future_forecast
+        )
+
+        dashboard_data["forecast_source"] = (
+            "AeroSense ML"
+        )
+
+
+        # =================================================
+        # BROADCAST TO DASHBOARD
+        # =================================================
+
+        socketio.emit(
+            "live_data",
+            dashboard_data
+        )
+
+
+        # =================================================
+        # SERVER LOG
+        # =================================================
+
+        print()
+
+        print(
+            "PRESENT AQI:",
+            present_aqi
+        )
+
+        print(
+            "PRESENT CATEGORY:",
+            present_category
+        )
+
+        print(
+            "AI ADVICE:",
+            advice
+        )
+
+
+        print(
+            "GPS FIX:",
+            gps_fix
+        )
+
+
+        print(
+            "LATITUDE:",
+            latitude
+        )
+
+
+        print(
+            "LONGITUDE:",
+            longitude
+        )
+
+
+        print(
+            "SATELLITES:",
+            satellites
+        )
+
+
+        print(
+            "ACCURACY:",
+            accuracy
+        )
+
+
+        print(
+            "FUTURE AQI FORECAST:"
+        )
+
+
+        if future_forecast:
+
+            for item in future_forecast:
+
+                print(
+                    "+",
+                    item["hours_ahead"],
+                    "hour:",
+                    item["aqi"],
+                    item["category"]
+                )
+
+        else:
+
+            print(
+                "No future forecast available."
+            )
+
+
+        # =================================================
+        # RESPONSE TO ESP32
+        # =================================================
+
+        return jsonify({
+
+            "status":
+                "success",
+
+            "message":
+                "Present AQI classified and future AQI predicted",
+
+
+            # -------------------------------------------------
+            # CURRENT DEVICE AQI
+            # -------------------------------------------------
+
+            "present_aqi":
+                present_aqi,
+
+            "present_category":
+                present_category,
+
+
+            # -------------------------------------------------
+            # ML UNDERSTANDING
+            # -------------------------------------------------
+
+            "ml_prediction":
+                present_aqi,
+
+            "ml_category":
+                present_category,
+
+
+            # -------------------------------------------------
+            # DASHBOARD COMPATIBILITY
+            # -------------------------------------------------
+
+            "final_aqi":
+                present_aqi,
+
+            "category":
+                present_category,
+
+
+            # -------------------------------------------------
+            # ADVICE
+            # -------------------------------------------------
+
+            "advice":
+                advice,
+
+
+            # -------------------------------------------------
+            # FUTURE ML FORECAST
+            # -------------------------------------------------
+
+            "predicted_1h":
+                (
+                    future_forecast[0]["aqi"]
+                    if len(future_forecast) > 0
+                    else None
+                ),
+
+            "predicted_2h":
+                (
+                    future_forecast[1]["aqi"]
+                    if len(future_forecast) > 1
+                    else None
+                ),
+
+            "predicted_3h":
+                (
+                    future_forecast[2]["aqi"]
+                    if len(future_forecast) > 2
+                    else None
+                ),
+
+            "future_forecast":
+                future_forecast,
+
+            "forecast_source":
+                "AeroSense ML",
+
+
+            # -------------------------------------------------
+            # GPS
+            # -------------------------------------------------
+
+            "gps_fix":
+                gps_fix,
+
+            "latitude":
+                latitude,
+
+            "longitude":
+                longitude,
+
+            "satellites":
+                satellites,
+
+            "accuracy":
+                accuracy,
+
+            "maps_url":
+                maps_url,
+
+
+            # -------------------------------------------------
+            # FULL DATA
+            # -------------------------------------------------
+
+            "data":
+                dashboard_data
+
+        })
+
+
+    # =====================================================
+    # ERROR HANDLING
+    # =====================================================
+
+    except Exception as e:
+
+        print()
+
+        print(
+            "======================================"
+        )
+
+        print(
+            "UPLOAD ERROR"
+        )
+
+        print(
+            "======================================"
+        )
+
+        print(
+            repr(e)
+        )
+
+
+        return jsonify({
+
+            "status":
+                "error",
+
+            "message":
+                str(e)
+
         }), 400
 
 
