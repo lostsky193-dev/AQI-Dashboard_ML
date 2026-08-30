@@ -41,13 +41,23 @@ ML_DIR = os.path.join(
 
 
 # =====================================================
-# LOAD PRESENT AQI CATEGORY MODEL
+# MODEL PATHS
 # =====================================================
 
 CATEGORY_MODEL_PATH = os.path.join(
     ML_DIR,
     "aqi_category_model.pkl"
 )
+
+FORECAST_MODEL_PATH = os.path.join(
+    ML_DIR,
+    "future_aqi_models.pkl"
+)
+
+
+# =====================================================
+# LOAD AQI CATEGORY MODEL
+# =====================================================
 
 try:
 
@@ -59,6 +69,19 @@ try:
         "AQI category ML model loaded successfully."
     )
 
+except FileNotFoundError:
+
+    print(
+        "ERROR: aqi_category_model.pkl not found."
+    )
+
+    print(
+        "Expected path:",
+        CATEGORY_MODEL_PATH
+    )
+
+    category_model = None
+
 except Exception as e:
 
     print(
@@ -66,17 +89,12 @@ except Exception as e:
         repr(e)
     )
 
-    raise
+    category_model = None
 
 
 # =====================================================
 # LOAD FUTURE AQI MODELS
 # =====================================================
-
-FORECAST_MODEL_PATH = os.path.join(
-    ML_DIR,
-    "future_aqi_models.pkl"
-)
 
 try:
 
@@ -84,9 +102,49 @@ try:
         FORECAST_MODEL_PATH
     )
 
+    model_1h = forecast_models["model_1h"]
+    model_2h = forecast_models["model_2h"]
+    model_3h = forecast_models["model_3h"]
+
+    FORECAST_FEATURES = forecast_models[
+        "features"
+    ]
+
     print(
         "Future AQI ML models loaded successfully."
     )
+
+    print(
+        "Forecast features:",
+        FORECAST_FEATURES
+    )
+
+except FileNotFoundError:
+
+    print(
+        "ERROR: future_aqi_models.pkl not found."
+    )
+
+    print(
+        "Expected path:",
+        FORECAST_MODEL_PATH
+    )
+
+    model_1h = None
+    model_2h = None
+    model_3h = None
+
+    FORECAST_FEATURES = [
+        "aqi",
+        "pm25",
+        "pm10",
+        "rel_humidity",
+        "temperature",
+        "hour",
+        "month",
+        "latitude",
+        "longitude"
+    ]
 
 except Exception as e:
 
@@ -95,38 +153,21 @@ except Exception as e:
         repr(e)
     )
 
-    raise
+    model_1h = None
+    model_2h = None
+    model_3h = None
 
-
-# =====================================================
-# EXTRACT FUTURE MODELS
-# =====================================================
-
-try:
-
-    model_1h = forecast_models["model_1h"]
-
-    model_2h = forecast_models["model_2h"]
-
-    model_3h = forecast_models["model_3h"]
-
-    FORECAST_FEATURES = forecast_models[
-        "features"
+    FORECAST_FEATURES = [
+        "aqi",
+        "pm25",
+        "pm10",
+        "rel_humidity",
+        "temperature",
+        "hour",
+        "month",
+        "latitude",
+        "longitude"
     ]
-
-    print(
-        "Forecast features:",
-        FORECAST_FEATURES
-    )
-
-except Exception as e:
-
-    print(
-        "ERROR reading forecast models:",
-        repr(e)
-    )
-
-    raise
 
 
 # =====================================================
@@ -214,7 +255,55 @@ def get_advice(aqi):
 
 
 # =====================================================
-# PREDICT FUTURE AQI
+# PRESENT AQI CATEGORY USING ML
+# =====================================================
+
+def classify_present_aqi(present_aqi):
+
+    present_aqi = round(
+        float(present_aqi)
+    )
+
+    # -------------------------------------------------
+    # Use trained ML classifier when available
+    # -------------------------------------------------
+
+    if category_model is not None:
+
+        try:
+
+            category_input = pd.DataFrame([
+                {
+                    "aqi": present_aqi
+                }
+            ])
+
+            prediction = category_model.predict(
+                category_input
+            )[0]
+
+            return str(
+                prediction
+            )
+
+        except Exception as e:
+
+            print(
+                "ML classifier prediction error:",
+                repr(e)
+            )
+
+    # -------------------------------------------------
+    # Fallback
+    # -------------------------------------------------
+
+    return get_aqi_category(
+        present_aqi
+    )
+
+
+# =====================================================
+# FUTURE AQI PREDICTION
 # =====================================================
 
 def predict_future_aqi(
@@ -227,52 +316,71 @@ def predict_future_aqi(
     longitude
 ):
 
+    if (
+        model_1h is None
+        or model_2h is None
+        or model_3h is None
+    ):
+
+        print(
+            "Future models unavailable."
+        )
+
+        return []
+
+
     try:
+
+        # -------------------------------------------------
+        # CURRENT TIME
+        # -------------------------------------------------
 
         now = datetime.now()
 
         current_hour = now.hour
         current_month = now.month
 
-        # -------------------------------------------------
-        # Build input exactly as used during training
-        # -------------------------------------------------
-
-        input_data = pd.DataFrame([{
-
-            "aqi":
-                float(present_aqi),
-
-            "pm25":
-                float(pm25),
-
-            "pm10":
-                float(pm10),
-
-            "rel_humidity":
-                float(humidity),
-
-            "temperature":
-                float(temperature),
-
-            "hour":
-                float(current_hour),
-
-            "month":
-                float(current_month),
-
-            "latitude":
-                float(latitude),
-
-            "longitude":
-                float(longitude)
-
-        }])
-
 
         # -------------------------------------------------
-        # IMPORTANT:
-        # Keep EXACT training feature order
+        # MODEL INPUT
+        # -------------------------------------------------
+
+        input_data = pd.DataFrame([
+            {
+
+                "aqi":
+                    float(present_aqi),
+
+                "pm25":
+                    float(pm25),
+
+                "pm10":
+                    float(pm10),
+
+                "rel_humidity":
+                    float(humidity),
+
+                "temperature":
+                    float(temperature),
+
+                "hour":
+                    float(current_hour),
+
+                "month":
+                    float(current_month),
+
+                "latitude":
+                    float(latitude),
+
+                "longitude":
+                    float(longitude)
+
+            }
+        ])
+
+
+        # -------------------------------------------------
+        # MATCH TRAINING FEATURE ORDER
         # -------------------------------------------------
 
         input_data = input_data[
@@ -334,6 +442,10 @@ def predict_future_aqi(
         )
 
 
+        # -------------------------------------------------
+        # RETURN FORECAST
+        # -------------------------------------------------
+
         return [
 
             {
@@ -369,7 +481,7 @@ def predict_future_aqi(
     except Exception as e:
 
         print(
-            "FUTURE AQI PREDICTION ERROR:",
+            "Future AQI prediction error:",
             repr(e)
         )
 
@@ -389,7 +501,7 @@ def index():
 
 
 # =====================================================
-# OPTIONAL FORECAST TEST ENDPOINT
+# FORECAST TEST API
 # =====================================================
 
 @app.route(
@@ -450,21 +562,28 @@ def forecast_endpoint():
             }), 400
 
 
-        future_forecast = predict_future_aqi(
+        forecast = predict_future_aqi(
 
-            present_aqi=present_aqi,
+            present_aqi=
+                present_aqi,
 
-            pm25=pm25,
+            pm25=
+                pm25,
 
-            pm10=pm10,
+            pm10=
+                pm10,
 
-            humidity=humidity,
+            humidity=
+                humidity,
 
-            temperature=temperature,
+            temperature=
+                temperature,
 
-            latitude=latitude,
+            latitude=
+                latitude,
 
-            longitude=longitude
+            longitude=
+                longitude
 
         )
 
@@ -475,10 +594,14 @@ def forecast_endpoint():
                 "success",
 
             "present_aqi":
-                round(float(present_aqi)),
+                round(
+                    float(
+                        present_aqi
+                    )
+                ),
 
             "future_forecast":
-                future_forecast,
+                forecast,
 
             "forecast_source":
                 "AeroSense ML"
@@ -489,7 +612,7 @@ def forecast_endpoint():
     except Exception as e:
 
         print(
-            "FORECAST ENDPOINT ERROR:",
+            "Forecast endpoint error:",
             repr(e)
         )
 
@@ -517,7 +640,7 @@ def upload_data():
     try:
 
         # =================================================
-        # RECEIVE ESP32 DATA
+        # RECEIVE ESP32 JSON
         # =================================================
 
         data = request.get_json(
@@ -559,10 +682,10 @@ def upload_data():
         # =================================================
         # PRESENT AQI
         #
-        # THIS IS THE IMPORTANT PART:
+        # IMPORTANT:
+        # This comes directly from ESP32.
         #
-        # ESP32 calculates the PRESENT AQI.
-        # Render DOES NOT replace it.
+        # We DO NOT calculate another present AQI.
         # =================================================
 
         if "final_aqi" not in data:
@@ -586,43 +709,21 @@ def upload_data():
 
 
         # =================================================
-        # PRESENT AQI CATEGORY
+        # ML CLASSIFICATION
         #
-        # ML classifier understands the AQI value.
+        # ML understands whether the current AQI is:
+        #
+        # Good
+        # Satisfactory
+        # Moderate
+        # Poor
+        # Very Poor
+        # Severe
         # =================================================
 
-        try:
-
-            category_prediction = (
-                category_model.predict(
-                    pd.DataFrame(
-                        [{
-                            "aqi":
-                                present_aqi
-                        }]
-                    )
-                )[0]
-            )
-
-            present_category = str(
-                category_prediction
-            )
-
-
-        except Exception as classifier_error:
-
-            print(
-                "ML classifier error:",
-                repr(
-                    classifier_error
-                )
-            )
-
-            present_category = (
-                get_aqi_category(
-                    present_aqi
-                )
-            )
+        present_category = classify_present_aqi(
+            present_aqi
+        )
 
 
         # =================================================
@@ -679,7 +780,6 @@ def upload_data():
             "longitude"
         )
 
-
         satellites = data.get(
             "satellites"
         )
@@ -707,51 +807,36 @@ def upload_data():
             and longitude is not None
         ):
 
-            try:
+            future_forecast = predict_future_aqi(
 
-                future_forecast = (
-                    predict_future_aqi(
+                present_aqi=
+                    present_aqi,
 
-                        present_aqi=
-                            present_aqi,
+                pm25=
+                    pm25,
 
-                        pm25=
-                            pm25,
+                pm10=
+                    pm10,
 
-                        pm10=
-                            pm10,
+                humidity=
+                    humidity,
 
-                        humidity=
-                            humidity,
+                temperature=
+                    temperature,
 
-                        temperature=
-                            temperature,
+                latitude=
+                    latitude,
 
-                        latitude=
-                            latitude,
+                longitude=
+                    longitude
 
-                        longitude=
-                            longitude
-                    )
-                )
-
-
-            except Exception as forecast_error:
-
-                print(
-                    "Forecast generation error:",
-                    repr(
-                        forecast_error
-                    )
-                )
-
-                future_forecast = []
+            )
 
 
         # =================================================
         # AI ADVICE
         #
-        # BASED ON PRESENT ESP32 AQI
+        # Advice is based on PRESENT AQI.
         # =================================================
 
         advice = get_advice(
@@ -768,9 +853,9 @@ def upload_data():
         )
 
 
-        # -------------------------------------------------
+        # =================================================
         # PRESENT AQI
-        # -------------------------------------------------
+        # =================================================
 
         dashboard_data["present_aqi"] = (
             present_aqi
@@ -781,9 +866,9 @@ def upload_data():
         )
 
 
-        # -------------------------------------------------
+        # =================================================
         # ML CATEGORY
-        # -------------------------------------------------
+        # =================================================
 
         dashboard_data["ml_category"] = (
             present_category
@@ -791,10 +876,10 @@ def upload_data():
 
 
         # -------------------------------------------------
-        # DO NOT SAY ML PREDICTED PRESENT AQI
-        #
-        # ml_prediction is kept equal to the device AQI
-        # only for compatibility with the old dashboard/API.
+        # IMPORTANT:
+        # Keep ML prediction field for old dashboard
+        # compatibility, BUT it represents the current
+        # ESP32 AQI being classified.
         # -------------------------------------------------
 
         dashboard_data["ml_prediction"] = (
@@ -802,9 +887,9 @@ def upload_data():
         )
 
 
-        # -------------------------------------------------
+        # =================================================
         # DASHBOARD GAUGE
-        # -------------------------------------------------
+        # =================================================
 
         dashboard_data["final_aqi"] = (
             present_aqi
@@ -815,9 +900,9 @@ def upload_data():
         )
 
 
-        # -------------------------------------------------
+        # =================================================
         # ENVIRONMENT
-        # -------------------------------------------------
+        # =================================================
 
         dashboard_data["temp"] = (
             temperature
@@ -828,27 +913,27 @@ def upload_data():
         )
 
 
-        # -------------------------------------------------
-        # DOMINANT
-        # -------------------------------------------------
+        # =================================================
+        # DOMINANT SIGNAL
+        # =================================================
 
         dashboard_data["dominant"] = (
             "ESP32 AQI"
         )
 
 
-        # -------------------------------------------------
+        # =================================================
         # ADVICE
-        # -------------------------------------------------
+        # =================================================
 
         dashboard_data["advice"] = (
             advice
         )
 
 
-        # -------------------------------------------------
+        # =================================================
         # GPS
-        # -------------------------------------------------
+        # =================================================
 
         dashboard_data["gps_fix"] = (
             gps_fix
@@ -875,9 +960,9 @@ def upload_data():
         )
 
 
-        # -------------------------------------------------
+        # =================================================
         # FUTURE FORECAST
-        # -------------------------------------------------
+        # =================================================
 
         dashboard_data["future_forecast"] = (
             future_forecast
@@ -889,7 +974,7 @@ def upload_data():
 
 
         # =================================================
-        # BROADCAST TO DASHBOARD
+        # SEND TO DASHBOARD
         # =================================================
 
         socketio.emit(
@@ -899,10 +984,13 @@ def upload_data():
 
 
         # =================================================
-        # SERVER LOG
+        # SERVER LOGS
         # =================================================
 
         print()
+        print(
+            "------------------------------"
+        )
 
         print(
             "PRESENT AQI:",
@@ -919,30 +1007,25 @@ def upload_data():
             advice
         )
 
-
         print(
             "GPS FIX:",
             gps_fix
         )
-
 
         print(
             "LATITUDE:",
             latitude
         )
 
-
         print(
             "LONGITUDE:",
             longitude
         )
 
-
         print(
             "SATELLITES:",
             satellites
         )
-
 
         print(
             "ACCURACY:",
@@ -970,8 +1053,13 @@ def upload_data():
         else:
 
             print(
-                "No future forecast available."
+                "Future forecast unavailable."
             )
+
+
+        print(
+            "------------------------------"
+        )
 
 
         # =================================================
@@ -988,7 +1076,7 @@ def upload_data():
 
 
             # -------------------------------------------------
-            # CURRENT DEVICE AQI
+            # PRESENT AQI
             # -------------------------------------------------
 
             "present_aqi":
@@ -999,7 +1087,7 @@ def upload_data():
 
 
             # -------------------------------------------------
-            # ML UNDERSTANDING
+            # ML CLASSIFICATION
             # -------------------------------------------------
 
             "ml_prediction":
@@ -1029,7 +1117,7 @@ def upload_data():
 
 
             # -------------------------------------------------
-            # FUTURE ML FORECAST
+            # FUTURE AQI
             # -------------------------------------------------
 
             "predicted_1h":
@@ -1084,7 +1172,7 @@ def upload_data():
 
 
             # -------------------------------------------------
-            # FULL DATA
+            # FULL DASHBOARD DATA
             # -------------------------------------------------
 
             "data":
@@ -1100,7 +1188,6 @@ def upload_data():
     except Exception as e:
 
         print()
-
         print(
             "======================================"
         )
