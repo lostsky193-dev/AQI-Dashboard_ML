@@ -2568,6 +2568,29 @@ body {
         max-height: 160px;
     }
 }
+@media (max-width: 600px) {
+
+    .sensor-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: none;
+        gap: 10px;
+    }
+
+    .sensor-card {
+        min-height: 130px;
+    }
+
+    .aqi-card,
+    .location-card,
+    .status-card,
+    .chart-card {
+        min-height: 220px;
+    }
+
+    .main-grid {
+        gap: 10px;
+    }
+}
 
 </style>
 </head>
