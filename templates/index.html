@@ -5197,8 +5197,21 @@ function updateForecast(
    SOCKET.IO
 ========================================================= */
 
-const socket =
-    io();
+const RENDER_URL = "https://YOUR-APP-NAME.onrender.com";   // <-- put your Render URL here
+
+const isHosted =
+    location.protocol.startsWith("http") &&
+    location.hostname.endsWith("onrender.com");
+
+const socket = io(
+    isHosted ? undefined : RENDER_URL,
+    {
+        transports: ["websocket", "polling"],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000
+    }
+);
 
 
 socket.on(
