@@ -2164,6 +2164,54 @@ body.calm .orb-wire {
     }
 }
 
+
+/* ---------- IEEE figure mode: no patterns, floating readings ---------- */
+
+.tile-art, .orb-wrap, .leaders, .node { display: none !important; }
+
+.callout,
+.tile-main {
+    animation: floaty 6s ease-in-out infinite;
+    animation-delay: var(--fd, 0s);
+    will-change: transform;
+}
+
+.tile:nth-child(2) .tile-main { --fd: -.8s; }
+.tile:nth-child(3) .tile-main { --fd: -1.6s; }
+.tile:nth-child(4) .tile-main { --fd: -2.4s; }
+.tile:nth-child(5) .tile-main { --fd: -3.2s; }
+.tile:nth-child(6) .tile-main { --fd: -4s; }
+.tile:nth-child(7) .tile-main { --fd: -4.8s; }
+.tile:nth-child(8) .tile-main { --fd: -5.6s; }
+
+@keyframes floaty {
+
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    25%      { transform: translate3d(3px, -7px, 0); }
+    50%      { transform: translate3d(-2px, -12px, 0); }
+    75%      { transform: translate3d(-4px, -5px, 0); }
+}
+
+.callout .big.xl {
+    font-size: clamp(4.2rem, 15vh, 10rem);
+    letter-spacing: -4px;
+    font-weight: 200;
+}
+
+.callout .big {
+    font-size: clamp(2.2rem, 7vh, 4.6rem);
+}
+
+.tile-val { font-size: clamp(1.9rem, 6.4vh, 4.2rem); }
+.tile.big .tile-val { font-size: clamp(3.4rem, 12vh, 8rem); }
+
+body.calm .callout,
+body.calm .tile-main { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+    .callout, .tile-main { animation: none; }
+}
+
 </style>
 </head>
 
@@ -2284,11 +2332,6 @@ body.calm .orb-wire {
         <div class="pop-title">Display</div>
 
         <div class="switch-row">
-            <span>Wireframe graphics</span>
-            <button class="switch on" id="sw-wire" aria-label="Wireframes"></button>
-        </div>
-
-        <div class="switch-row">
             <span>Motion &amp; breathing</span>
             <button class="switch on" id="sw-motion" aria-label="Motion"></button>
         </div>
@@ -2367,34 +2410,9 @@ body.calm .orb-wire {
 
         <div class="view active" id="view-overview">
 
-            <div class="orb-wrap">
-
-                <div class="orb"></div>
-                <div class="orb-core"></div>
-
-                <svg class="orb-wire" id="orb-wire" viewBox="0 0 200 200"></svg>
-
-                <div class="orb-mist"></div>
-
-            </div>
-
-            <svg class="leaders" viewBox="0 0 100 100" preserveAspectRatio="none">
-
-                <line x1="53" y1="43" x2="66" y2="40"/>
-                <line x1="41" y1="62" x2="23" y2="66"/>
-                <line x1="55" y1="64" x2="70" y2="71"/>
-                <line x1="40" y1="42" x2="26" y2="38"/>
-
-            </svg>
-
-            <div class="node pulse" style="left:53%;top:43%"></div>
-            <div class="node" style="left:41%;top:62%"></div>
-            <div class="node" style="left:55%;top:64%"></div>
-            <div class="node" style="left:40%;top:42%"></div>
-
             <!-- dominant -->
 
-            <div class="callout mini-callout hide-sm" style="left:66%;top:19%">
+            <div class="callout mini-callout hide-sm" style="left:60%;top:30%;--fd:-1s">
 
                 <div class="mini-ico">
 
@@ -2420,7 +2438,7 @@ body.calm .orb-wire {
 
             <!-- category -->
 
-            <div class="callout mini-callout hide-sm" style="left:66%;top:29%">
+            <div class="callout mini-callout hide-sm" style="left:60%;top:42%;--fd:-2.2s">
 
                 <div class="mini-ico">
 
@@ -2444,9 +2462,9 @@ body.calm .orb-wire {
 
             <!-- AQI -->
 
-            <div class="callout" style="left:66%;top:40%">
+            <div class="callout" style="left:14%;top:27%;--fd:0s">
 
-                <div class="big" id="ov-aqi">--</div>
+                <div class="big xl" id="ov-aqi">--</div>
 
                 <div class="lbl">present AQI</div>
 
@@ -2456,7 +2474,7 @@ body.calm .orb-wire {
 
             <!-- temp -->
 
-            <div class="callout" style="left:6%;top:63%">
+            <div class="callout" style="left:14%;top:62%;--fd:-3s">
 
                 <div class="big"><span id="ov-temp">--</span><small>°C</small></div>
 
@@ -2468,7 +2486,7 @@ body.calm .orb-wire {
 
             <!-- humidity -->
 
-            <div class="callout" style="left:70%;top:68%">
+            <div class="callout" style="left:40%;top:62%;--fd:-4s">
 
                 <div class="big"><span id="ov-hum">--</span><small>%</small></div>
 
@@ -2480,7 +2498,7 @@ body.calm .orb-wire {
 
             <!-- AI next hour -->
 
-            <div class="callout hide-sm" style="left:6%;top:33%;margin-top:0">
+            <div class="callout hide-sm" style="left:66%;top:62%;--fd:-1.6s">
 
                 <div class="big" id="ov-next">--</div>
 
@@ -2679,8 +2697,6 @@ body.calm .orb-wire {
 
         <div class="tile-chip" id="c-pm25">--</div>
 
-        <svg class="tile-art" id="art-pm25" viewBox="0 0 200 300" preserveAspectRatio="xMidYMid meet"></svg>
-
         <div class="tile-foot">
             <span>Cleaner</span>
             <span id="f-pm25">CPCB scale</span>
@@ -2705,8 +2721,6 @@ body.calm .orb-wire {
 
         <div class="tile-chip" id="c-pm1">--</div>
 
-        <svg class="tile-art" id="art-pm1" viewBox="0 0 400 200" preserveAspectRatio="none"></svg>
-
         <div class="tile-foot">
             <span>ultrafine particles</span>
             <span id="f-pm1"></span>
@@ -2729,8 +2743,6 @@ body.calm .orb-wire {
         </div>
 
         <div class="tile-chip" id="c-dust">--</div>
-
-        <svg class="tile-art" id="art-dust" viewBox="0 0 400 200" preserveAspectRatio="none"></svg>
 
         <div class="tile-sub" id="s-dust">-- V · -- mg/m³</div>
 
@@ -2758,8 +2770,6 @@ body.calm .orb-wire {
 
         <div class="tile-chip" id="c-co">--</div>
 
-        <svg class="tile-art" id="art-co" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet"></svg>
-
         <div class="tile-foot">
             <span>Low</span>
             <span>High</span>
@@ -2782,8 +2792,6 @@ body.calm .orb-wire {
         </div>
 
         <div class="tile-chip" id="c-ch4">--</div>
-
-        <svg class="tile-art" id="art-ch4" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet"></svg>
 
         <div class="tile-foot">
             <span>Low</span>
@@ -2808,8 +2816,6 @@ body.calm .orb-wire {
 
         <div class="tile-chip" id="c-nh3">--</div>
 
-        <svg class="tile-art" id="art-nh3" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet"></svg>
-
         <div class="tile-foot">
             <span>Low</span>
             <span>High</span>
@@ -2833,8 +2839,6 @@ body.calm .orb-wire {
 
         <div class="tile-chip" id="c-o3">--</div>
 
-        <svg class="tile-art" id="art-o3" viewBox="0 0 400 200" preserveAspectRatio="none"></svg>
-
         <div class="tile-foot">
             <span>Low</span>
             <span>High</span>
@@ -2857,8 +2861,6 @@ body.calm .orb-wire {
         </div>
 
         <div class="tile-chip" id="c-pm10">--</div>
-
-        <svg class="tile-art" id="art-pm10" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet"></svg>
 
         <div class="tile-foot">
             <span>Cleaner</span>
@@ -3551,7 +3553,6 @@ function bindSwitch(id, onChange) {
     });
 }
 
-bindSwitch("sw-wire", (on) => document.body.classList.toggle("no-wire", !on));
 
 bindSwitch("sw-motion", (on) => document.body.classList.toggle("calm", !on));
 
