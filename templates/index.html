@@ -2212,6 +2212,88 @@ body.calm .tile-main { animation: none; }
     .callout, .tile-main { animation: none; }
 }
 
+
+/* ---------- responsive overview grid (no overlap on any screen) ---------- */
+
+#view-overview {
+    display: grid;
+    position: absolute;
+    left: clamp(60px, 7vw, 100px);
+    right: clamp(14px, 2vw, 30px);
+    top: calc(clamp(54px, 9vh, 96px) + 2.2 * clamp(1.9rem, 5.4vh, 3.8rem) + 14px);
+    bottom: calc(clamp(10px, 1.6vh, 18px) + clamp(56px, 9vh, 82px) + 14px);
+    grid-template-columns: 1.5fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+    grid-template-areas:
+        "aqi  aqi  dom"
+        "aqi  aqi  cat"
+        "temp hum  next";
+    gap: clamp(10px, 2vh, 24px) clamp(12px, 2vw, 32px);
+    align-items: center;
+    justify-items: start;
+}
+
+#view-overview > .callout {
+    position: static;
+    left: auto; top: auto;
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+#view-overview > .callout:nth-child(1) { grid-area: dom; }
+#view-overview > .callout:nth-child(2) { grid-area: cat; }
+#view-overview > .callout:nth-child(3) { grid-area: aqi; align-self: center; }
+#view-overview > .callout:nth-child(4) { grid-area: temp; }
+#view-overview > .callout:nth-child(5) { grid-area: hum; }
+#view-overview > .callout:nth-child(6) { grid-area: next; }
+
+#view-overview .callout.hide-sm { display: block; }
+#view-overview .mini-callout.hide-sm { display: flex; }
+
+@media (max-width: 1100px), (max-height: 620px) {
+    .stage { min-height: 720px; }
+}
+
+@media (max-width: 640px) {
+    .stage { min-height: 820px; }
+
+    #view-overview {
+        left: 56px;
+        right: 14px;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1.4fr 1fr 1fr 1fr;
+        grid-template-areas:
+            "aqi  aqi"
+            "temp hum"
+            "next dom"
+            "cat  cat";
+        gap: 12px;
+    }
+
+    #view-overview .callout .big.xl { font-size: clamp(4rem, 24vw, 6.5rem); letter-spacing: -3px; }
+    #view-overview .callout .big { font-size: clamp(1.8rem, 9vw, 2.6rem); }
+    #view-overview .callout .lbl { font-size: .72rem; }
+    #view-overview .callout .chip { font-size: .62rem; }
+    .tile-val { font-size: clamp(2rem, 9vw, 3rem); }
+    .tile.big .tile-val { font-size: clamp(3.2rem, 16vw, 5rem); }
+}
+
+/* long text safety */
+.tile .loc-name { padding-right: 84px; overflow-wrap: anywhere; font-size: clamp(1rem, 2.4vh, 1.5rem); }
+.tile-val, .callout .big { white-space: nowrap; }
+.tile { min-width: 0; overflow: hidden; }
+
+/* final fit tuning */
+.tile-val { font-size: clamp(1.7rem, 4.6vh, 3rem); }
+.tile.big .tile-val { font-size: clamp(2.8rem, 8vh, 5.2rem); }
+#ov-next { white-space: normal; font-size: clamp(1.4rem, 4.2vh, 2.6rem); line-height: 1.05; }
+#ov-next, #ov-aqi { max-width: 100%; }
+@media (max-width: 640px) {
+    .tile-val { font-size: clamp(1.8rem, 8vw, 2.6rem); }
+    .tile.big .tile-val { font-size: clamp(3rem, 15vw, 4.6rem); }
+    #ov-next { font-size: clamp(1.2rem, 5.4vw, 1.7rem); overflow-wrap: normal; }
+}
 </style>
 </head>
 
