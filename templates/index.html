@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>AeroSense AI | Air &amp; Atmosphere</title>
+<title>AeroSense AI | Air &amp; Atmosphere Monitoring</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -11,2977 +11,860 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-
-/* =========================================================
-   TOKENS
-========================================================= */
-
 :root {
-
-    --paper: #f4f3f0;
-    --paper-2: #eceae6;
-    --white: #ffffff;
-
-    --ink: #14161a;
-    --ink-2: #5d6168;
-    --ink-3: #9a9da3;
-
-    --line: rgba(20, 22, 26, .10);
-    --line-2: rgba(20, 22, 26, .18);
-
-    --lime: #e4ff2b;
-    --lime-glow: rgba(228, 255, 43, .55);
-
-    --aqi: #35b57a;
-
-    --lv0: #35b57a;
-    --lv1: #9ccf4a;
-    --lv2: #f1c232;
-    --lv3: #f08a4b;
-    --lv4: #e5586b;
-    --lv5: #b8203a;
-
-    --font: "Manrope", ui-sans-serif, system-ui, sans-serif;
-    --mono: "JetBrains Mono", "Courier New", monospace;
-
-    --ease: cubic-bezier(.22, .9, .25, 1);
-    --spring: cubic-bezier(.34, 1.56, .64, 1);
-
-    --gap: 3px;
+    --bg: #f2f6f4;
+    --card: #ffffff;
+    --ink: #111827;
+    --ink-2: #4b5563;
+    --ink-3: #9ca3af;
+    --line: #e5e9e7;
+    --green: #16a34a;
+    --green-d: #0e4a35;
+    --shadow: 0 6px 22px rgba(15, 60, 40, .08), 0 1px 3px rgba(15, 60, 40, .06);
+    --radius: 16px;
+    --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
-/* =========================================================
-   GLOBAL
-========================================================= */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-* {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-}
-
-html,
-body {
-    height: 100%;
-    margin: 0;
-}
+html, body { margin: 0; min-height: 100%; }
 
 body {
-
     font-family: var(--font);
-    font-weight: 400;
     color: var(--ink);
-
+    background: var(--bg);
     -webkit-font-smoothing: antialiased;
-
-    overflow: hidden;
-
-    background:
-        radial-gradient(900px 600px at 20% 0%, #ffffff, transparent 60%),
-        linear-gradient(180deg, #e7e5e2 0%, #f1f0ed 45%, #f6f5f3 100%);
 }
 
-button {
-    font: inherit;
-    color: inherit;
-    cursor: pointer;
-}
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+a { color: inherit; }
 
-a {
-    color: inherit;
-}
+/* ================= LAYOUT ================= */
 
-/* =========================================================
-   SHELL
-========================================================= */
-
-.shell {
-
-    height: 100dvh;
-    width: 100%;
+.app {
+    display: grid;
+    grid-template-columns: 204px minmax(0, 1fr);
+    min-height: 100vh;
     max-width: 2000px;
     margin: 0 auto;
-
-    padding: clamp(6px, 1vh, 14px);
-
-    display: grid;
-
-    grid-template-columns:
-        minmax(0, 1.08fr)
-        minmax(0, 1fr);
-
-    gap: var(--gap);
-
-    min-height: 0;
 }
 
-/* =========================================================
-   STAGE (LEFT PANEL)
-========================================================= */
+/* ================= SIDEBAR ================= */
 
-.stage {
-
-    position: relative;
-
-    min-height: 0;
-
-    border-radius: 8px;
-
-    background:
-        radial-gradient(700px 520px at 42% 54%, rgba(255,255,255,.9), transparent 70%),
-        linear-gradient(180deg, #fbfbfa, #f3f2ef);
-
+.side {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    color: #fff;
     overflow: hidden;
-
-    box-shadow:
-        0 0 0 1px rgba(20,22,26,.04),
-        0 30px 70px rgba(30, 30, 30, .10);
-
-    animation: stageIn .9s var(--ease) both;
+    background: linear-gradient(180deg, #0a3a2a 0%, #0e4a35 55%, #0b3526 100%);
+    z-index: 20;
 }
 
-@keyframes stageIn {
-
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.logo {
+    padding: 26px 12px 10px;
+    text-align: center;
 }
 
-/* ---------- top bar ---------- */
+.logo svg { width: 52px; height: 52px; display: block; margin: 0 auto 6px; }
 
-.topbar {
+.logo b { font-size: 1.28rem; font-weight: 700; letter-spacing: -.2px; }
 
-    position: absolute;
-
-    left: clamp(12px, 1.6vw, 24px);
-    right: clamp(12px, 1.6vw, 24px);
-    top: clamp(10px, 1.6vh, 20px);
-
-    z-index: 30;
-
+.nav {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 10px;
-}
-
-.brand {
-
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.brand-mark {
-
-    width: clamp(28px, 3.6vh, 36px);
-    height: clamp(28px, 3.6vh, 36px);
-
-    display: grid;
-    place-items: center;
-
-    border-radius: 8px;
-
-    background: var(--white);
-
-    border: 1px solid var(--line);
-
-    box-shadow: 0 6px 18px rgba(0, 0, 0, .06);
-}
-
-.brand-mark svg {
-    width: 58%;
-    height: 58%;
-}
-
-.brand-name {
-
-    font-size: clamp(.7rem, 1.1vh, .85rem);
-    font-weight: 600;
-
-    letter-spacing: .2px;
-}
-
-.clock-chip {
-
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    padding: 6px 12px;
-
-    border-radius: 999px;
-
-    background: rgba(255,255,255,.75);
-
-    border: 1px solid var(--line);
-
-    font-size: clamp(.55rem, .8vh, .66rem);
-
-    color: var(--ink-2);
-
-    font-family: var(--mono);
-
-    white-space: nowrap;
-}
-
-.clock-chip b {
-
-    color: var(--ink);
-    font-weight: 500;
-}
-
-.top-actions {
-
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.conn-pill {
-
-    display: flex;
-    align-items: center;
-    gap: 7px;
-
-    padding: 6px 11px;
-
-    border-radius: 999px;
-
-    background: rgba(255,255,255,.8);
-
-    border: 1px solid var(--line);
-
-    font-size: clamp(.5rem, .74vh, .6rem);
-
-    font-weight: 600;
-
-    letter-spacing: .6px;
-
-    text-transform: uppercase;
-
-    color: var(--ink-2);
-}
-
-.conn-dot {
-
-    width: 7px;
-    height: 7px;
-
-    border-radius: 50%;
-
-    background: #35b57a;
-
-    animation: connPulse 2s infinite;
-}
-
-.conn-dot.off {
-
-    background: #e5586b;
-    animation: none;
-}
-
-@keyframes connPulse {
-
-    0% {
-        box-shadow: 0 0 0 0 rgba(53,181,122,.5);
-    }
-
-    70% {
-        box-shadow: 0 0 0 8px rgba(53,181,122,0);
-    }
-
-    100% {
-        box-shadow: 0 0 0 0 rgba(53,181,122,0);
-    }
-}
-
-.icon-btn {
-
+    flex-direction: column;
+    gap: 6px;
+    padding: 18px 10px;
     position: relative;
-
-    width: clamp(28px, 3.6vh, 34px);
-    height: clamp(28px, 3.6vh, 34px);
-
-    display: grid;
-    place-items: center;
-
-    border-radius: 8px;
-
-    background: rgba(255,255,255,.85);
-
-    border: 1px solid var(--line);
-
-    transition:
-        transform .25s var(--spring),
-        background .25s var(--ease);
+    z-index: 3;
 }
 
-.icon-btn:hover {
-
-    background: var(--white);
-    transform: translateY(-1px);
+.nav button {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 11px;
+    text-align: left;
+    font-size: .95rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, .88);
+    transition: background .2s;
 }
 
-.icon-btn svg {
+.nav button:hover { background: rgba(255, 255, 255, .08); }
 
-    width: 52%;
-    height: 52%;
-
-    stroke: var(--ink);
-    fill: none;
-    stroke-width: 1.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+.nav button.active {
+    background: linear-gradient(90deg, #1b8a55, #26a367);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, .2), inset 0 0 0 1px rgba(255, 255, 255, .12);
 }
 
-.badge {
+.nav svg {
+    width: 21px; height: 21px; flex-shrink: 0;
+    fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
 
+.nav button.active svg { fill: #fff; stroke: #fff; }
+
+.side-art {
     position: absolute;
+    left: 0; right: 0; bottom: 0;
+    width: 100%; height: 46%;
+    z-index: 1;
+    pointer-events: none;
+}
 
-    top: -4px;
-    right: -4px;
+.blades { animation: spin 14s linear infinite; }
+.blades.b2 { animation-duration: 18s; }
 
-    min-width: 14px;
-    height: 14px;
+@keyframes spin { to { transform: rotate(360deg); } }
 
-    padding: 0 3px;
+/* ================= MAIN ================= */
 
-    border-radius: 99px;
+.main {
+    padding: 14px 22px 28px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
 
-    background: var(--ink);
+.head {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+    flex-wrap: wrap;
+}
 
-    color: var(--lime);
+.head h1 {
+    margin: 0;
+    font-size: clamp(1.4rem, 2.2vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -.6px;
+}
 
-    font-size: 8px;
+.head p {
+    margin: 4px 0 0;
+    font-size: clamp(.8rem, 1.1vw, 1rem);
+    color: #374151;
+}
+
+.head-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-top: 6px;
+    flex-wrap: wrap;
+}
+
+.live-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 18px;
+    border-radius: 999px;
+    background: #d9f7df;
+    border: 1px solid #b6ecc3;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, .18);
+    font-size: .85rem;
     font-weight: 700;
+    color: #14532d;
+    letter-spacing: .3px;
+}
 
+.live-dot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; animation: pulse 2s infinite; }
+.live-dot.off { background: #ef4444; animation: none; }
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, .55); }
+    70% { box-shadow: 0 0 0 9px rgba(34, 197, 94, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+.sep { width: 1px; height: 22px; background: #cfd6d3; }
+
+.date-chip {
+    display: flex; align-items: center; gap: 9px;
+    font-size: .9rem; font-weight: 500; color: #1f2937; white-space: nowrap;
+}
+
+.date-chip svg { width: 22px; height: 22px; fill: none; stroke: #1f2937; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+.ibtn {
+    position: relative;
+    width: 38px; height: 38px;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: var(--shadow);
+}
+
+.ibtn svg { width: 20px; height: 20px; fill: none; stroke: #111827; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+.reddot {
+    position: absolute; top: 4px; right: 5px;
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #ef4444; border: 2px solid #fff;
     display: none;
-    place-items: center;
 }
-
-.badge.show {
-    display: grid;
-}
-
-/* ---------- popovers ---------- */
+.reddot.show { display: block; }
 
 .popover {
-
     position: absolute;
-
-    right: clamp(12px, 1.6vw, 24px);
-    top: clamp(48px, 7vh, 64px);
-
-    width: min(300px, 84%);
-
-    z-index: 60;
-
-    padding: 12px;
-
-    border-radius: 12px;
-
-    background: rgba(255,255,255,.96);
-
-    border: 1px solid var(--line-2);
-
-    box-shadow: 0 24px 60px rgba(0,0,0,.14);
-
-    backdrop-filter: blur(14px);
-
-    opacity: 0;
-    pointer-events: none;
-
-    transform: translateY(-6px) scale(.98);
-
-    transition:
-        opacity .25s var(--ease),
-        transform .25s var(--ease);
-}
-
-.popover.open {
-
-    opacity: 1;
-    pointer-events: auto;
-
-    transform: translateY(0) scale(1);
-}
-
-.pop-title {
-
-    font-size: .62rem;
-
-    font-weight: 700;
-
-    text-transform: uppercase;
-
-    letter-spacing: 1.2px;
-
-    color: var(--ink-3);
-
-    margin-bottom: 8px;
-}
-
-.pop-row {
-
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    gap: 10px;
-
-    padding: 7px 0;
-
-    border-bottom: 1px solid var(--line);
-
-    font-size: .68rem;
-}
-
-.pop-row:last-child {
-    border-bottom: 0;
-}
-
-.pop-row span:first-child {
-    color: var(--ink-2);
-}
-
-.pop-row b {
-
-    font-family: var(--mono);
-    font-weight: 500;
-}
-
-.alert-list {
-
-    max-height: 220px;
-    overflow-y: auto;
-
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.alert-item {
-
-    padding: 8px 10px;
-
-    border-radius: 9px;
-
-    background: var(--paper);
-
-    font-size: .66rem;
-
-    line-height: 1.45;
-}
-
-.alert-item small {
-
-    display: block;
-
-    color: var(--ink-3);
-
-    font-family: var(--mono);
-
-    font-size: .56rem;
-
-    margin-top: 2px;
-}
-
-.switch-row {
-
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    padding: 8px 0;
-
-    border-bottom: 1px solid var(--line);
-
-    font-size: .68rem;
-}
-
-.switch-row:last-child {
-    border-bottom: 0;
-}
-
-.switch {
-
-    position: relative;
-
-    width: 34px;
-    height: 20px;
-
-    border-radius: 99px;
-
-    background: #d4d3d0;
-
-    border: 0;
-
-    transition: background .25s var(--ease);
-}
-
-.switch::after {
-
-    content: "";
-
-    position: absolute;
-
-    top: 2px;
-    left: 2px;
-
-    width: 16px;
-    height: 16px;
-
-    border-radius: 50%;
-
-    background: var(--white);
-
-    transition: transform .25s var(--spring);
-
-    box-shadow: 0 1px 4px rgba(0,0,0,.25);
-}
-
-.switch.on {
-    background: var(--ink);
-}
-
-.switch.on::after {
-    transform: translateX(14px);
-    background: var(--lime);
-}
-
-/* ---------- hero title ---------- */
-
-.hero-title {
-
-    position: absolute;
-
-    left: clamp(14px, 2vw, 30px);
-    top: clamp(54px, 9vh, 96px);
-
-    z-index: 20;
-
-    margin: 0;
-
-    font-size: clamp(1.9rem, 5.4vh, 3.8rem);
-    font-weight: 300;
-
-    line-height: 1.02;
-
-    letter-spacing: -1.2px;
-
-    pointer-events: none;
-}
-
-/* ---------- vertical tabs ---------- */
-
-.tabs {
-
-    position: absolute;
-
-    left: clamp(14px, 2vw, 30px);
-    top: clamp(150px, 24vh, 260px);
-
-    z-index: 30;
-
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.tab {
-
-    width: clamp(28px, 3.8vh, 36px);
-    height: clamp(28px, 3.8vh, 36px);
-
-    display: grid;
-    place-items: center;
-
-    border-radius: 7px;
-
-    background: transparent;
-
-    border: 1px solid transparent;
-
-    transition:
-        background .25s var(--ease),
-        border-color .25s var(--ease),
-        transform .25s var(--spring);
-}
-
-.tab svg {
-
-    width: 52%;
-    height: 52%;
-
-    stroke: var(--ink-3);
-    fill: none;
-    stroke-width: 1.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-
-    transition: stroke .25s var(--ease);
-}
-
-.tab:hover {
-    transform: translateX(2px);
-}
-
-.tab:hover svg {
-    stroke: var(--ink);
-}
-
-.tab.active {
-
-    background: var(--white);
-
-    border-color: var(--line);
-
-    box-shadow: 0 6px 16px rgba(0,0,0,.06);
-}
-
-.tab.active svg {
-    stroke: var(--ink);
-}
-
-.tab-tip {
-
-    position: absolute;
-
-    left: calc(100% + 8px);
-    top: 50%;
-
-    transform: translateY(-50%);
-
-    white-space: nowrap;
-
-    padding: 4px 8px;
-
-    border-radius: 6px;
-
-    background: var(--ink);
-
-    color: var(--white);
-
-    font-size: .58rem;
-
-    opacity: 0;
-
-    pointer-events: none;
-
-    transition: opacity .2s var(--ease);
-}
-
-.tab-wrap {
-    position: relative;
-}
-
-.tab-wrap:hover .tab-tip {
-    opacity: 1;
-}
-
-/* =========================================================
-   VIEWS
-========================================================= */
-
-.views {
-
-    position: absolute;
-
-    inset: 0;
-
-    z-index: 10;
-}
-
-.view {
-
-    position: absolute;
-
-    inset: 0;
-
-    opacity: 0;
-
-    pointer-events: none;
-
-    transform: scale(.985);
-
-    transition:
-        opacity .55s var(--ease),
-        transform .55s var(--ease);
-}
-
-.view.active {
-
-    opacity: 1;
-
-    pointer-events: auto;
-
-    transform: scale(1);
-}
-
-/* ---------- overview: orb ---------- */
-
-.orb-wrap {
-
-    position: absolute;
-
-    left: 46%;
-    top: 53%;
-
-    width: min(54vh, 40vw);
-
-    aspect-ratio: 1;
-
-    transform: translate(-50%, -50%);
-}
-
-.orb {
-
-    position: absolute;
-
-    inset: 0;
-
-    border-radius: 50%;
-
-    background:
-        radial-gradient(circle at 38% 30%, rgba(255,255,255,.95), transparent 38%),
-        radial-gradient(circle at 60% 66%, var(--aqi), transparent 62%),
-        radial-gradient(circle at 50% 50%, #b9b6b2, #8d8a86 70%);
-
-    filter: blur(14px);
-
-    opacity: .82;
-
-    animation: breathe 6.5s ease-in-out infinite;
-
-    transition: background 1s var(--ease);
-}
-
-.orb-core {
-
-    position: absolute;
-
-    inset: 14%;
-
-    border-radius: 50%;
-
-    background:
-        radial-gradient(circle at 40% 32%, rgba(255,255,255,.9), transparent 50%),
-        radial-gradient(circle at 55% 62%, color-mix(in srgb, var(--aqi) 70%, #fff), transparent 70%);
-
-    filter: blur(8px);
-
-    opacity: .75;
-
-    animation: breathe 6.5s ease-in-out infinite reverse;
-}
-
-.orb-mist {
-
-    position: absolute;
-
-    inset: -10%;
-
-    border-radius: 50%;
-
-    background:
-        radial-gradient(circle, transparent 46%, rgba(251,251,250,.95) 72%);
-
-    pointer-events: none;
-}
-
-.orb-wire {
-
-    position: absolute;
-
-    inset: 6%;
-
-    animation: wireSpin 60s linear infinite;
-}
-
-body.no-wire .orb-wire,
-body.no-wire .tile-art {
-    display: none;
-}
-
-body.calm .orb,
-body.calm .orb-core,
-body.calm .orb-wire {
-    animation: none;
-}
-
-@keyframes breathe {
-
-    0%,
-    100% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.05);
-    }
-}
-
-@keyframes wireSpin {
-
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* ---------- callouts ---------- */
-
-.leaders {
-
-    position: absolute;
-
-    inset: 0;
-
-    width: 100%;
-    height: 100%;
-
-    pointer-events: none;
-}
-
-.leaders line {
-
-    stroke: rgba(20, 22, 26, .28);
-
-    stroke-width: 1;
-
-    vector-effect: non-scaling-stroke;
-}
-
-.node {
-
-    position: absolute;
-
-    width: 22px;
-    height: 22px;
-
-    transform: translate(-50%, -50%);
-
-    border-radius: 50%;
-
-    background: rgba(228,255,43,.28);
-
-    display: grid;
-    place-items: center;
-
-    box-shadow: 0 0 0 1px rgba(20,22,26,.06);
-}
-
-.node::after {
-
-    content: "";
-
-    width: 8px;
-    height: 8px;
-
-    border-radius: 50%;
-
-    background: var(--lime);
-
-    box-shadow:
-        0 0 0 1px rgba(20,22,26,.18),
-        0 0 14px var(--lime-glow);
-}
-
-.node.pulse {
-    animation: nodePulse 2.6s infinite;
-}
-
-@keyframes nodePulse {
-
-    0% {
-        box-shadow: 0 0 0 0 rgba(228,255,43,.55);
-    }
-
-    70% {
-        box-shadow: 0 0 0 14px rgba(228,255,43,0);
-    }
-
-    100% {
-        box-shadow: 0 0 0 0 rgba(228,255,43,0);
-    }
-}
-
-.callout {
-
-    position: absolute;
-
-    z-index: 5;
-}
-
-.callout .big {
-
-    font-size: clamp(1.5rem, 4.4vh, 3rem);
-
-    font-weight: 300;
-
-    letter-spacing: -1px;
-
-    line-height: 1;
-
-    font-variant-numeric: tabular-nums;
-}
-
-.callout .big small {
-
-    font-size: .5em;
-
-    color: var(--ink-3);
-
-    margin-left: 3px;
-}
-
-.callout .lbl {
-
-    margin-top: 5px;
-
-    font-size: clamp(.6rem, .92vh, .74rem);
-
-    color: var(--ink);
-
-    font-weight: 500;
-}
-
-.chip {
-
-    display: inline-block;
-
+    right: 0; top: 100%;
     margin-top: 6px;
-
-    padding: 2px 8px;
-
-    border-radius: 5px;
-
-    background: rgba(20,22,26,.06);
-
-    font-size: clamp(.5rem, .72vh, .58rem);
-
-    color: var(--ink-2);
-
-    font-weight: 500;
-}
-
-.chip.hot {
-
-    background: var(--ink);
-
-    color: var(--lime);
-}
-
-.mini-callout {
-
-    display: flex;
-    align-items: center;
-
-    gap: 10px;
-}
-
-.mini-ico {
-
-    width: clamp(30px, 4.4vh, 42px);
-    height: clamp(30px, 4.4vh, 42px);
-
-    display: grid;
-    place-items: center;
-
-    flex-shrink: 0;
-}
-
-.mini-ico svg {
-
-    width: 100%;
-    height: 100%;
-
-    stroke: var(--ink);
-    fill: none;
-    stroke-width: 1;
-    stroke-linecap: round;
-}
-
-.mini-callout .lbl {
-
-    margin: 0;
-
-    text-align: left;
-}
-
-/* ---------- map view ---------- */
-
-.map-shell {
-
-    position: absolute;
-
-    left: clamp(60px, 7vw, 100px);
-    right: clamp(12px, 1.6vw, 24px);
-    top: clamp(120px, 20vh, 200px);
-    bottom: clamp(84px, 13vh, 130px);
-
-    border-radius: 12px;
-
-    overflow: hidden;
-
-    border: 1px solid var(--line-2);
-
-    box-shadow: 0 24px 60px rgba(0,0,0,.10);
-}
-
-#device-map {
-
-    width: 100%;
-    height: 100%;
-
-    background: #ebe9e4;
-}
-
-.leaflet-tile-pane {
-
-    filter: grayscale(.55) contrast(.95) brightness(1.03);
-}
-
-.map-card {
-
-    position: absolute;
-
-    left: 10px;
-    bottom: 10px;
-
-    z-index: 500;
-
-    max-width: calc(100% - 20px);
-
-    padding: 9px 12px;
-
-    border-radius: 10px;
-
-    background: rgba(255,255,255,.92);
-
+    width: min(320px, 92vw);
+    z-index: 60;
+    padding: 14px;
+    border-radius: 14px;
+    background: #fff;
     border: 1px solid var(--line);
-
-    backdrop-filter: blur(10px);
-
-    font-size: .66rem;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .16);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-6px);
+    transition: opacity .2s, transform .2s;
 }
 
-.map-card b {
+.popover.open { opacity: 1; pointer-events: auto; transform: none; }
 
-    display: block;
+.pop-title { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--ink-3); margin-bottom: 8px; }
 
-    font-size: .74rem;
+.pop-row { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: .8rem; }
+.pop-row:last-child { border-bottom: 0; }
+.pop-row span { color: var(--ink-2); }
+.pop-row b { font-weight: 600; }
 
-    font-weight: 600;
-}
+.alert-list { max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.alert-item { padding: 9px 11px; border-radius: 10px; background: #f3f6f4; font-size: .78rem; line-height: 1.4; }
+.alert-item small { display: block; color: var(--ink-3); font-size: .68rem; margin-top: 2px; }
 
-.map-card span {
+/* ================= CARDS ================= */
 
-    color: var(--ink-2);
-
-    font-family: var(--mono);
-
-    font-size: .58rem;
-}
-
-.pin {
-
-    width: 22px;
-    height: 22px;
-
-    position: relative;
-}
-
-.pin .core {
-
-    position: absolute;
-
-    left: 50%;
-    top: 50%;
-
-    width: 12px;
-    height: 12px;
-
-    transform: translate(-50%, -50%);
-
-    border-radius: 50%;
-
-    background: var(--lime);
-
-    border: 2px solid var(--ink);
-}
-
-.pin .ring {
-
-    position: absolute;
-
-    left: 50%;
-    top: 50%;
-
-    width: 22px;
-    height: 22px;
-
-    transform: translate(-50%, -50%);
-
-    border-radius: 50%;
-
-    border: 2px solid rgba(20,22,26,.5);
-
-    animation: pinPulse 2.2s ease-out infinite;
-}
-
-@keyframes pinPulse {
-
-    0% {
-        transform: translate(-50%, -50%) scale(.4);
-        opacity: .9;
-    }
-
-    100% {
-        transform: translate(-50%, -50%) scale(2.2);
-        opacity: 0;
-    }
-}
-
-.leaflet-control-zoom a {
-
-    background: rgba(255,255,255,.95) !important;
-    color: var(--ink) !important;
-    border-color: var(--line) !important;
-}
-
-.leaflet-control-attribution {
-
-    background: rgba(255,255,255,.8) !important;
-    font-size: 8px !important;
-}
-
-/* ---------- forecast view ---------- */
-
-.forecast-wrap {
-
-    position: absolute;
-
-    left: clamp(60px, 7vw, 100px);
-    right: clamp(14px, 2vw, 30px);
-    top: clamp(130px, 21vh, 210px);
-    bottom: clamp(90px, 14vh, 140px);
-
-    display: grid;
-
-    grid-template-columns: repeat(3, 1fr);
-
-    gap: var(--gap);
-}
-
-.fc-card {
-
-    position: relative;
-
-    border-radius: 8px;
-
-    padding: clamp(12px, 2vh, 22px);
-
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-
-    color: #fff;
-
-    overflow: hidden;
-
-    transition: transform .35s var(--spring);
-}
-
-.fc-card:hover {
-    transform: translateY(-3px);
-}
-
-.fc-card:nth-child(1) {
-    background: linear-gradient(180deg, #3f7d3a, #8fbf79 55%, #c9dca9);
-}
-
-.fc-card:nth-child(2) {
-    background: linear-gradient(135deg, #e3d83a, #ecc43a 55%, #9fb0a8);
-}
-
-.fc-card:nth-child(3) {
-    background: linear-gradient(180deg, #f08a6c, #ee9b78 40%, #7f9bb8);
-}
-
-.fc-time {
-
-    font-size: .62rem;
-
-    letter-spacing: 1px;
-
-    text-transform: uppercase;
-
-    opacity: .85;
-}
-
-.fc-val {
-
-    font-size: clamp(2.4rem, 8vh, 5.4rem);
-
-    font-weight: 200;
-
-    letter-spacing: -2px;
-
-    line-height: 1;
-
-    font-variant-numeric: tabular-nums;
-
-    text-shadow: 0 2px 20px rgba(0,0,0,.14);
-}
-
-.fc-cat {
-
-    font-size: .8rem;
-
-    font-weight: 600;
-}
-
-.fc-sub {
-
-    font-size: .62rem;
-
-    opacity: .85;
-}
-
-.fc-bar {
-
-    height: 3px;
-
-    border-radius: 3px;
-
-    background: rgba(255,255,255,.35);
-
-    overflow: hidden;
-
-    margin-top: 8px;
-}
-
-.fc-bar i {
-
-    display: block;
-
-    height: 100%;
-
-    width: 0;
-
-    background: var(--lime);
-
-    transition: width 1s var(--spring);
-}
-
-.fc-meta {
-
-    position: absolute;
-
-    left: clamp(60px, 7vw, 100px);
-    top: clamp(104px, 17vh, 170px);
-
-    font-size: .64rem;
-
-    color: var(--ink-2);
-
-    font-family: var(--mono);
-}
-
-/* ---------- history view ---------- */
-
-.history-wrap {
-
-    position: absolute;
-
-    left: clamp(60px, 7vw, 100px);
-    right: clamp(14px, 2vw, 30px);
-    top: clamp(130px, 21vh, 210px);
-    bottom: clamp(90px, 14vh, 140px);
-
-    display: flex;
-    flex-direction: column;
-
-    gap: 10px;
-}
-
-.metric-chips {
-
-    display: flex;
-    flex-wrap: wrap;
-
-    gap: 6px;
-}
-
-.mchip {
-
-    padding: 5px 11px;
-
-    border-radius: 99px;
-
-    background: rgba(255,255,255,.75);
-
-    border: 1px solid var(--line);
-
-    font-size: .6rem;
-
-    font-weight: 600;
-
-    letter-spacing: .4px;
-
-    color: var(--ink-2);
-
-    transition:
-        background .25s var(--ease),
-        color .25s var(--ease);
-}
-
-.mchip.active {
-
-    background: var(--ink);
-
-    color: var(--lime);
-
-    border-color: var(--ink);
-}
-
-.chart-box {
-
-    position: relative;
-
-    flex: 1;
-
-    min-height: 0;
-
-    border-radius: 10px;
-
-    background: rgba(255,255,255,.7);
-
-    border: 1px solid var(--line);
-
-    padding: 12px;
-}
-
-.chart-stats {
-
-    display: flex;
-    gap: 18px;
-
-    font-size: .62rem;
-
-    color: var(--ink-2);
-
-    font-family: var(--mono);
-}
-
-.chart-stats b {
-
-    color: var(--ink);
-
-    font-weight: 500;
-}
-
-/* ---------- advice view ---------- */
-
-.advice-wrap {
-
-    position: absolute;
-
-    left: clamp(60px, 7vw, 100px);
-    right: clamp(14px, 2vw, 30px);
-    top: clamp(130px, 21vh, 210px);
-    bottom: clamp(90px, 14vh, 140px);
-
-    display: flex;
-    flex-direction: column;
-
-    gap: 10px;
-
-    overflow-y: auto;
-}
-
-.ai-head {
-
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-}
-
-.ai-cat {
-
-    font-size: clamp(1.5rem, 4.6vh, 3rem);
-
-    font-weight: 300;
-
-    letter-spacing: -1px;
-}
-
-.ai-pred {
-
-    font-size: .66rem;
-
-    color: var(--ink-2);
-
-    font-family: var(--mono);
-}
-
-.advice-line {
-
-    display: flex;
-    gap: 12px;
-
-    align-items: flex-start;
-
-    padding: 12px 14px;
-
-    border-radius: 10px;
-
-    background: rgba(255,255,255,.78);
-
-    border: 1px solid var(--line);
-
-    font-size: clamp(.72rem, 1.2vh, .9rem);
-
-    line-height: 1.5;
-
-    font-weight: 500;
-
-    animation: lineIn .6s var(--ease) both;
-}
-
-.advice-line i {
-
-    width: 8px;
-    height: 8px;
-
-    margin-top: .5em;
-
-    flex-shrink: 0;
-
-    border-radius: 50%;
-
-    background: var(--lime);
-
-    box-shadow:
-        0 0 0 1px rgba(20,22,26,.25),
-        0 0 12px var(--lime-glow);
-}
-
-@keyframes lineIn {
-
-    from {
-        opacity: 0;
-        transform: translateY(8px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* =========================================================
-   TIMELINE
-========================================================= */
-
-.timeline {
-
-    position: absolute;
-
-    left: clamp(12px, 1.6vw, 22px);
-    right: clamp(12px, 1.6vw, 22px);
-    bottom: clamp(10px, 1.6vh, 18px);
-
-    z-index: 40;
-
-    height: clamp(56px, 9vh, 82px);
-
-    padding: 0 12px;
-
-    display: flex;
-    align-items: center;
-
-    gap: 14px;
-
-    border-radius: 10px;
-
-    background: rgba(255,255,255,.82);
-
-    border: 1px solid var(--line);
-
-    backdrop-filter: blur(10px);
-}
-
-.tl-title {
-
-    font-size: clamp(.58rem, .9vh, .7rem);
-
-    font-weight: 600;
-
-    white-space: nowrap;
-}
-
-.tl-title small {
-
-    display: block;
-
-    font-weight: 400;
-
-    color: var(--ink-3);
-
-    font-size: .85em;
-
-    margin-top: 2px;
-}
-
-.tl-track {
-
-    position: relative;
-
-    flex: 1;
-
-    height: 56%;
-
+.card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(15, 60, 40, .04);
     min-width: 0;
 }
 
-.tl-bar {
+.row { display: grid; gap: 14px; min-width: 0; }
+.r1 { grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr); }
+.r2 { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+.r3 { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
 
-    position: absolute;
+/* ---- AQI card ---- */
 
-    left: 0;
-    right: 0;
-    top: 0;
-
-    height: 56%;
-
-    display: flex;
-
-    border-radius: 5px;
-
-    overflow: hidden;
-
-    gap: 1px;
-
-    background: rgba(20,22,26,.05);
-}
-
-.tl-seg {
-
-    flex: 1;
-
-    min-width: 2px;
-
-    opacity: .85;
-
-    transition: opacity .2s var(--ease), transform .2s var(--ease);
-}
-
-.tl-seg:hover {
-
-    opacity: 1;
-
-    transform: scaleY(1.15);
-}
-
-.tl-seg.last {
-
-    opacity: 1;
-
-    box-shadow: inset 0 0 0 2px var(--lime);
-}
-
-.tl-labels {
-
-    position: absolute;
-
-    left: 0;
-    right: 0;
-    bottom: -6px;
-
-    height: 40%;
-}
-
-.tl-labels span {
-
-    position: absolute;
-
-    transform: translateX(-50%);
-
-    font-family: var(--mono);
-
-    font-size: clamp(.46rem, .66vh, .56rem);
-
-    color: var(--ink-3);
-}
-
-.tl-tip {
-
-    position: absolute;
-
-    top: -26px;
-
-    transform: translateX(-50%);
-
-    padding: 3px 7px;
-
-    border-radius: 5px;
-
-    background: var(--ink);
-
-    color: var(--lime);
-
-    font-family: var(--mono);
-
-    font-size: .54rem;
-
-    white-space: nowrap;
-
-    opacity: 0;
-
-    pointer-events: none;
-
-    transition: opacity .15s var(--ease);
-}
-
-.tl-tip.show {
-    opacity: 1;
-}
-
-.tl-go {
-
-    width: 26px;
-    height: 26px;
-
-    border-radius: 7px;
-
-    border: 1px solid var(--line);
-
-    background: var(--white);
-
-    display: grid;
-    place-items: center;
-
-    font-size: .8rem;
-}
-
-/* =========================================================
-   TILES (RIGHT GRID)
-========================================================= */
-
-.tiles {
-
-    min-height: 0;
-
-    display: grid;
-
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-
-    grid-template-rows:
-        1.18fr
-        1.18fr
-        1fr
-        1fr;
-
-    grid-template-areas:
-        "pm25 pm25 pm25 pm1  pm1  pm1"
-        "pm25 pm25 pm25 dust dust dust"
-        "co   co   ch4  ch4  nh3  nh3"
-        "o3   o3   pm10 pm10 loc  loc";
-
-    gap: var(--gap);
-}
-
-.tile {
-
+.aqi-card {
     position: relative;
-
-    border-radius: 6px;
-
-    overflow: hidden;
-
-    color: #fff;
-
-    cursor: pointer;
-
-    isolation: isolate;
-
-    transition:
-        transform .4s var(--spring),
-        filter .4s var(--ease),
-        box-shadow .4s var(--ease);
-
-    animation: tileIn .8s var(--ease) both;
-}
-
-.tile:nth-child(1) { animation-delay: .05s; }
-.tile:nth-child(2) { animation-delay: .10s; }
-.tile:nth-child(3) { animation-delay: .15s; }
-.tile:nth-child(4) { animation-delay: .20s; }
-.tile:nth-child(5) { animation-delay: .25s; }
-.tile:nth-child(6) { animation-delay: .30s; }
-.tile:nth-child(7) { animation-delay: .35s; }
-.tile:nth-child(8) { animation-delay: .40s; }
-.tile:nth-child(9) { animation-delay: .45s; }
-
-@keyframes tileIn {
-
-    from {
-        opacity: 0;
-        transform: scale(.97);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-.tile:hover {
-
-    transform: translateY(-3px);
-
-    filter: saturate(1.08);
-
-    box-shadow: 0 24px 50px rgba(0,0,0,.18);
-
-    z-index: 3;
-}
-
-.tile:active {
-    transform: scale(.985);
-}
-
-.tile.selected::after {
-
-    content: "";
-
-    position: absolute;
-
-    inset: 0;
-
-    border-radius: inherit;
-
-    box-shadow: inset 0 0 0 2px var(--lime);
-
-    pointer-events: none;
-}
-
-.tile-head {
-
-    position: absolute;
-
-    left: clamp(10px, 1.2vw, 18px);
-    right: clamp(10px, 1.2vw, 18px);
-    top: clamp(8px, 1.3vh, 16px);
-
-    display: flex;
-    justify-content: space-between;
-
-    font-size: clamp(.52rem, .78vh, .64rem);
-
-    z-index: 3;
-}
-
-.tile-label {
-    opacity: .9;
-    font-weight: 500;
-}
-
-.tile-arrow {
-    opacity: .85;
-}
-
-.tile-main {
-
-    position: absolute;
-
-    left: clamp(10px, 1.2vw, 18px);
-    top: clamp(24px, 4vh, 40px);
-
-    z-index: 3;
-}
-
-.tile-val {
-
-    font-size: clamp(1.5rem, 5vh, 3.4rem);
-
-    font-weight: 300;
-
-    line-height: 1;
-
-    letter-spacing: -1.5px;
-
-    font-variant-numeric: tabular-nums;
-
-    text-shadow: 0 2px 18px rgba(0,0,0,.12);
-}
-
-.tile.big .tile-val {
-
-    font-size: clamp(2.4rem, 8.6vh, 6rem);
-}
-
-.tile-unit {
-
-    margin-top: 3px;
-
-    font-size: clamp(.5rem, .8vh, .64rem);
-
-    opacity: .88;
-}
-
-.tile-chip {
-
-    position: absolute;
-
-    right: clamp(10px, 1.2vw, 18px);
-    top: clamp(26px, 4.2vh, 42px);
-
-    z-index: 3;
-
-    font-size: clamp(.5rem, .76vh, .62rem);
-
-    font-weight: 600;
-
-    padding: 2px 8px;
-
-    border-radius: 5px;
-
-    background: rgba(255,255,255,.22);
-
-    backdrop-filter: blur(6px);
-}
-
-.tile-art {
-
-    position: absolute;
-
-    inset: 0;
-
-    width: 100%;
-    height: 100%;
-
-    z-index: 1;
-
-    pointer-events: none;
-}
-
-.tile-art * {
-
-    vector-effect: non-scaling-stroke;
-}
-
-.tile-foot {
-
-    position: absolute;
-
-    left: clamp(10px, 1.2vw, 18px);
-    right: clamp(10px, 1.2vw, 18px);
-    bottom: clamp(7px, 1.2vh, 14px);
-
-    z-index: 3;
-
-    display: flex;
-    justify-content: space-between;
-
-    font-size: clamp(.46rem, .7vh, .58rem);
-
-    opacity: .9;
-}
-
-.tile-sub {
-
-    position: absolute;
-
-    left: clamp(10px, 1.2vw, 18px);
-    bottom: clamp(22px, 3.2vh, 34px);
-
-    z-index: 3;
-
-    font-size: clamp(.46rem, .7vh, .58rem);
-
-    font-family: var(--mono);
-
-    opacity: .85;
-}
-
-.t-green {
-    background: linear-gradient(180deg, #3b7a38 0%, #6fa95e 32%, #a3cb86 58%, #c9dca9 100%);
-}
-
-.t-yellow {
-    background: linear-gradient(120deg, #e1d838 0%, #ecc83b 46%, #f0b13f 72%, #8fa6b0 100%);
-    color: #1c1d10;
-}
-
-.t-dusk {
-    background: linear-gradient(180deg, #f08a6c 0%, #ee9b78 34%, #a7a7a8 66%, #6d8dae 100%);
-}
-
-.t-amber {
-    background: radial-gradient(circle at 50% 56%, #f2a43c 0%, #cbbf49 52%, #8fbf6e 100%);
-}
-
-.t-forest {
-    background: radial-gradient(circle at 50% 72%, #7fc47a 0%, #c6b658 58%, #e59b52 100%);
-}
-
-.t-rose {
-    background: linear-gradient(160deg, #e7a07b 0%, #d9b48a 40%, #98b59a 100%);
-}
-
-.t-sky {
-    background: linear-gradient(160deg, #9fc3b3 0%, #c9d79a 46%, #efc86a 100%);
-}
-
-.t-mist {
-    background: linear-gradient(180deg, #dcd9d3 0%, #eeece7 100%);
-    color: var(--ink);
-}
-
-.t-mist .tile-chip {
-    background: rgba(20,22,26,.08);
-}
-
-/* location tile */
-
-.loc-body {
-
-    position: absolute;
-
-    left: clamp(10px, 1.2vw, 18px);
-    right: clamp(10px, 1.2vw, 18px);
-    top: clamp(26px, 4vh, 40px);
-    bottom: clamp(8px, 1.2vh, 14px);
-
-    z-index: 3;
-
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.loc-name {
-
-    font-size: clamp(.8rem, 1.7vh, 1.2rem);
-
-    font-weight: 500;
-
-    line-height: 1.25;
-
-    letter-spacing: -.2px;
-
-    overflow: hidden;
-
-    display: -webkit-box;
-
-    -webkit-line-clamp: 3;
-
-    -webkit-box-orient: vertical;
-}
-
-.loc-grid {
-
     display: grid;
-
-    grid-template-columns: 1fr 1fr;
-
-    gap: 4px 10px;
-
-    font-size: clamp(.46rem, .7vh, .58rem);
-
-    font-family: var(--mono);
-
-    color: var(--ink-2);
+    grid-template-columns: 250px 1px minmax(0, 1fr);
+    align-items: center;
+    gap: 18px;
+    padding: 14px 22px;
+    overflow: hidden;
 }
 
-.loc-grid b {
-
-    color: var(--ink);
-
-    font-weight: 500;
+.aqi-card::after {
+    content: "";
+    position: absolute; right: -10%; bottom: -30px;
+    width: 70%; height: 80px;
+    background: radial-gradient(ellipse at 60% 100%, rgba(74, 190, 120, .28), transparent 70%);
+    pointer-events: none;
 }
+
+.gauge { position: relative; width: 250px; }
+.gauge svg { width: 100%; display: block; }
+
+.gauge-txt {
+    position: absolute;
+    left: 0; right: 0; bottom: 2px;
+    text-align: center;
+}
+
+.gauge-txt small { display: block; font-size: 1rem; font-weight: 600; margin-bottom: -4px; }
+.gauge-txt .n { font-size: 3.2rem; font-weight: 800; line-height: 1.05; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+
+.gpill {
+    display: inline-block;
+    padding: 2px 20px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #fff;
+    background: #35b57a;
+    transition: background .5s;
+}
+
+.vdiv { width: 1px; height: 96px; background: var(--line); }
+
+.aq-status { position: relative; z-index: 2; min-width: 0; }
+
+.aq-title {
+    display: flex; align-items: center; gap: 10px;
+    font-size: clamp(1.15rem, 1.9vw, 1.6rem);
+    font-weight: 700; letter-spacing: -.3px;
+}
+
+.aq-title svg { width: 40px; height: 40px; flex-shrink: 0; }
+
+.aq-desc { margin: 8px 0 0; font-size: .98rem; color: #3f6f5a; line-height: 1.4; max-width: 330px; }
+
+.aq-meta { margin-top: 8px; font-size: .78rem; color: var(--ink-2); display: flex; gap: 8px; flex-wrap: wrap; }
+.aq-meta span { padding: 3px 10px; border-radius: 999px; background: #eef4f1; font-weight: 500; }
+.aq-meta b { font-weight: 700; color: var(--ink); }
+
+.adv { margin: 6px 0 0; padding: 0; list-style: none; font-size: .74rem; color: var(--ink-2); display: grid; gap: 2px; }
+.adv li::before { content: "• "; color: var(--green); }
+
+/* ---- env card ---- */
+
+.env-card {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: center;
+    padding: 12px 6px;
+}
+
+.env {
+    text-align: center;
+    padding: 8px 4px;
+    border-right: 1px solid var(--line);
+    min-width: 0;
+}
+
+.env:last-child { border-right: 0; }
+
+.env svg { width: 40px; height: 40px; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+.env .l { margin-top: 6px; font-size: .8rem; font-weight: 500; }
+.env .v { margin-top: 5px; font-size: clamp(.95rem, 1.3vw, 1.2rem); font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* ---- chart card ---- */
+
+.chart-card { display: flex; flex-direction: column; padding: 16px 18px 14px; min-height: 420px; }
+
+.ch-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ch-title { display: flex; align-items: center; gap: 10px; font-size: 1.15rem; font-weight: 700; letter-spacing: -.2px; }
+.ch-title svg { width: 26px; height: 26px; fill: none; stroke: #16a34a; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.range {
+    display: flex; padding: 3px; border-radius: 999px; background: #fff;
+    border: 1px solid var(--line); box-shadow: 0 2px 8px rgba(0, 0, 0, .05);
+}
+
+.range button { padding: 5px 13px; border-radius: 999px; font-size: .8rem; font-weight: 600; color: #374151; }
+.range button.active { background: #16a34a; color: #fff; box-shadow: 0 3px 10px rgba(22, 163, 74, .4); }
+
+.chart-box { position: relative; flex: 1; min-height: 260px; margin-top: 10px; }
+
+.legend {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px;
+    margin: 10px auto 0; padding: 8px 16px; border-radius: 12px;
+    background: #fff; border: 1px solid var(--line); box-shadow: 0 2px 8px rgba(0, 0, 0, .04);
+    width: fit-content; max-width: 100%;
+}
+
+.legend button { display: flex; align-items: center; gap: 7px; font-size: .85rem; font-weight: 500; }
+.legend i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.legend button.off { opacity: .35; text-decoration: line-through; }
+
+/* ---- metric cards ---- */
+
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-content: stretch; grid-auto-rows: 1fr; }
+
+.mc {
+    position: relative;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: #fff;
+    border: 1px solid rgba(15, 60, 40, .05);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: background .5s, transform .25s;
+}
+
+.mc:hover { transform: translateY(-2px); }
+
+.mc-ico { width: 44px; height: 44px; align-self: center; }
+.mc-ico svg { width: 100%; height: 100%; }
+
+.mc-name { font-size: 1rem; font-weight: 700; line-height: 1.15; }
+.mc-sub { font-size: .78rem; color: #4b5563; margin-top: 1px; }
+.mc-val { margin-top: 4px; font-size: 1.25rem; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mc-val span { font-size: .85rem; font-weight: 500; color: #374151; margin-left: 2px; }
+
+.mc-bar { margin-top: 5px; height: 5px; width: 62%; max-width: 120px; border-radius: 5px; background: #e5e7eb; overflow: hidden; }
+.mc-bar i { display: block; height: 100%; width: 0; border-radius: 5px; background: #22c55e; transition: width .8s, background .5s; }
+
+.mc-badge {
+    position: absolute; top: 10px; right: 12px;
+    padding: 2px 11px; border-radius: 999px;
+    font-size: .74rem; font-weight: 600;
+    background: #dcfce7; color: #15803d;
+    transition: background .4s, color .4s;
+}
+
+.mc-spark { position: absolute; right: 12px; bottom: 12px; width: 36%; height: 28px; }
+
+/* ---- forecast ---- */
+
+.fc-card { padding: 14px 18px 12px; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+
+.fc-card::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 60px;
+    background: linear-gradient(180deg, transparent, rgba(74, 190, 120, .12));
+    pointer-events: none;
+}
+
+.fc-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.fc-head .t { display: flex; align-items: center; gap: 12px; font-size: 1.15rem; font-weight: 700; }
+.fc-head .t svg { width: 26px; height: 26px; fill: none; stroke: #16a34a; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+.fc-tag { padding: 6px 16px; border-radius: 999px; background: #16a34a; color: #fff; font-size: .8rem; font-weight: 600; box-shadow: 0 3px 10px rgba(22, 163, 74, .35); }
+
+.fc-meta { margin-top: 4px; font-size: .74rem; color: var(--ink-2); }
+
+.fc-row {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-top: 10px; border-top: 1px solid var(--line); padding-top: 10px;
+    position: relative; z-index: 2; flex: 1; align-items: center;
+}
+
+.fc-cell { text-align: center; border-right: 1px solid var(--line); padding: 4px 6px; }
+.fc-cell:last-child { border-right: 0; }
+.fc-cell svg { width: 34px; height: 34px; display: block; margin: 0 auto; }
+.fc-cell .tm { margin-top: 3px; font-size: .95rem; font-weight: 500; }
+.fc-pill {
+    display: inline-block; margin-top: 6px; padding: 4px 18px; border-radius: 999px;
+    font-weight: 700; font-size: .95rem; background: #dcfce7; color: #15803d; transition: background .4s, color .4s;
+}
+
+/* ---- map card ---- */
+
+.map-card { display: flex; flex-direction: column; padding: 14px 16px 14px; gap: 10px; min-height: 270px; }
+
+.mp-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mp-head .t { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700; }
+.mp-head .t svg { width: 24px; height: 24px; fill: none; stroke: #16a34a; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.chip { padding: 3px 12px; border-radius: 999px; font-size: .7rem; font-weight: 700; letter-spacing: .5px; background: #fef3c7; color: #92400e; }
+.chip.ok { background: #dcfce7; color: #15803d; }
+
+.map-wrap { position: relative; flex: 1; min-height: 170px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+#device-map { position: absolute; inset: 0; background: #e8ece9; }
+
+.loc-name { font-size: .88rem; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+.loc-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.loc-grid { display: grid; grid-template-columns: repeat(4, auto); gap: 4px 16px; font-size: .72rem; color: var(--ink-2); }
+.loc-grid b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
 
 .loc-link {
+    padding: 6px 14px; border-radius: 9px; background: #16a34a; color: #fff;
+    text-decoration: none; font-size: .74rem; font-weight: 600; white-space: nowrap;
+}
+.loc-link.hide { display: none; }
 
-    display: inline-flex;
+.pin { width: 22px; height: 22px; position: relative; }
+.pin .core { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; transform: translate(-50%, -50%); border-radius: 50%; background: #16a34a; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .35); }
+.pin .ring { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%, -50%); border-radius: 50%; border: 2px solid rgba(22, 163, 74, .6); animation: pinPulse 2.2s ease-out infinite; }
 
-    align-items: center;
-
-    gap: 5px;
-
-    align-self: flex-start;
-
-    padding: 3px 9px;
-
-    border-radius: 6px;
-
-    background: var(--ink);
-
-    color: var(--lime);
-
-    text-decoration: none;
-
-    font-size: clamp(.46rem, .7vh, .58rem);
-
-    font-weight: 600;
+@keyframes pinPulse {
+    0% { transform: translate(-50%, -50%) scale(.4); opacity: .9; }
+    100% { transform: translate(-50%, -50%) scale(2.4); opacity: 0; }
 }
 
-.loc-link.hide {
-    display: none;
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 1280px) {
+    .r1, .r2 { grid-template-columns: 1fr; }
+    .r3 { grid-template-columns: 1fr; }
+    .aqi-card { grid-template-columns: 250px 1px minmax(0, 1fr); }
 }
 
-/* wire strokes */
-
-.w {
-
-    fill: none;
-
-    stroke: rgba(255,255,255,.62);
-
-    stroke-width: 1;
+@media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    .side { position: static; height: auto; flex-direction: row; align-items: center; }
+    .side-art { display: none; }
+    .logo { padding: 10px 12px; display: flex; align-items: center; gap: 8px; }
+    .logo svg { width: 30px; height: 30px; margin: 0; }
+    .logo b { font-size: 1rem; white-space: nowrap; }
+    .nav { flex-direction: row; overflow-x: auto; padding: 8px; gap: 4px; }
+    .nav button { width: auto; padding: 9px 12px; white-space: nowrap; font-size: .82rem; gap: 8px; }
+    .main { padding: 12px; }
+    .head-actions .sep { display: none; }
 }
 
-.t-yellow .w {
-    stroke: rgba(255,255,255,.85);
+@media (max-width: 720px) {
+    .aqi-card { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+    .vdiv { display: none; }
+    .aq-title { justify-content: center; }
+    .aq-desc { margin-left: auto; margin-right: auto; }
+    .aq-meta { justify-content: center; }
+    .env-card { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .env { border-right: 0; border-bottom: 1px solid var(--line); }
+    .cards { grid-template-columns: 1fr; }
+    .fc-row { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 10px; }
+    .loc-grid { grid-template-columns: repeat(2, auto); }
 }
-
-.w.faint {
-    stroke: rgba(255,255,255,.34);
-}
-
-.dot {
-
-    fill: var(--lime);
-
-    stroke: rgba(20,22,26,.25);
-
-    stroke-width: 1;
-
-    filter: drop-shadow(0 0 6px var(--lime-glow));
-}
-
-.lbl {
-
-    font-size: 9px;
-
-    fill: rgba(255,255,255,.9);
-}
-
-/* =========================================================
-   RESPONSIVE
-========================================================= */
-
-@media (max-width: 1100px), (max-height: 620px) {
-
-    html,
-    body {
-
-        overflow-y: auto;
-        height: auto;
-    }
-
-    .shell {
-
-        height: auto;
-
-        display: flex;
-        flex-direction: column;
-    }
-
-    .stage {
-
-        height: 92vh;
-        min-height: 640px;
-    }
-
-    .tiles {
-
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-
-        grid-template-rows: none;
-
-        grid-auto-rows: 220px;
-
-        grid-template-areas:
-            "pm25 pm25"
-            "pm1  dust"
-            "co   ch4"
-            "nh3  o3"
-            "pm10 loc";
-    }
-
-    .tile.big {
-        min-height: 300px;
-    }
-
-    .orb-wrap {
-
-        width: 60vw;
-    }
-}
-
-@media (max-width: 640px) {
-
-    .clock-chip {
-        display: none;
-    }
-
-    .tiles {
-
-        grid-template-columns: 1fr;
-
-        grid-template-areas:
-            "pm25"
-            "pm1"
-            "dust"
-            "co"
-            "ch4"
-            "nh3"
-            "o3"
-            "pm10"
-            "loc";
-    }
-
-    .forecast-wrap {
-
-        grid-template-columns: 1fr;
-    }
-
-    .callout.hide-sm {
-        display: none;
-    }
-}
-
-
-/* ---------- IEEE figure mode: no patterns, floating readings ---------- */
-
-.tile-art, .orb-wrap, .leaders, .node { display: none !important; }
-
-.callout,
-.tile-main {
-    animation: floaty 6s ease-in-out infinite;
-    animation-delay: var(--fd, 0s);
-    will-change: transform;
-}
-
-.tile:nth-child(2) .tile-main { --fd: -.8s; }
-.tile:nth-child(3) .tile-main { --fd: -1.6s; }
-.tile:nth-child(4) .tile-main { --fd: -2.4s; }
-.tile:nth-child(5) .tile-main { --fd: -3.2s; }
-.tile:nth-child(6) .tile-main { --fd: -4s; }
-.tile:nth-child(7) .tile-main { --fd: -4.8s; }
-.tile:nth-child(8) .tile-main { --fd: -5.6s; }
-
-@keyframes floaty {
-
-    0%, 100% { transform: translate3d(0, 0, 0); }
-    25%      { transform: translate3d(3px, -7px, 0); }
-    50%      { transform: translate3d(-2px, -12px, 0); }
-    75%      { transform: translate3d(-4px, -5px, 0); }
-}
-
-.callout .big.xl {
-    font-size: clamp(4.2rem, 15vh, 10rem);
-    letter-spacing: -4px;
-    font-weight: 200;
-}
-
-.callout .big {
-    font-size: clamp(2.2rem, 7vh, 4.6rem);
-}
-
-.tile-val { font-size: clamp(1.9rem, 6.4vh, 4.2rem); }
-.tile.big .tile-val { font-size: clamp(3.4rem, 12vh, 8rem); }
-
-body.calm .callout,
-body.calm .tile-main { animation: none; }
 
 @media (prefers-reduced-motion: reduce) {
-    .callout, .tile-main { animation: none; }
-}
-
-
-/* ---------- responsive overview grid (no overlap on any screen) ---------- */
-
-#view-overview {
-    display: grid;
-    position: absolute;
-    left: clamp(60px, 7vw, 100px);
-    right: clamp(14px, 2vw, 30px);
-    top: calc(clamp(54px, 9vh, 96px) + 2.2 * clamp(1.9rem, 5.4vh, 3.8rem) + 14px);
-    bottom: calc(clamp(10px, 1.6vh, 18px) + clamp(56px, 9vh, 82px) + 14px);
-    grid-template-columns: 1.5fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr 1fr;
-    grid-template-areas:
-        "aqi  aqi  dom"
-        "aqi  aqi  cat"
-        "temp hum  next";
-    gap: clamp(10px, 2vh, 24px) clamp(12px, 2vw, 32px);
-    align-items: center;
-    justify-items: start;
-}
-
-#view-overview > .callout {
-    position: static;
-    left: auto; top: auto;
-    max-width: 100%;
-    min-width: 0;
-    overflow-wrap: anywhere;
-}
-
-#view-overview > .callout:nth-child(1) { grid-area: dom; }
-#view-overview > .callout:nth-child(2) { grid-area: cat; }
-#view-overview > .callout:nth-child(3) { grid-area: aqi; align-self: center; }
-#view-overview > .callout:nth-child(4) { grid-area: temp; }
-#view-overview > .callout:nth-child(5) { grid-area: hum; }
-#view-overview > .callout:nth-child(6) { grid-area: next; }
-
-#view-overview .callout.hide-sm { display: block; }
-#view-overview .mini-callout.hide-sm { display: flex; }
-
-@media (max-width: 1100px), (max-height: 620px) {
-    .stage { min-height: 720px; }
-}
-
-@media (max-width: 640px) {
-    .stage { min-height: 820px; }
-
-    #view-overview {
-        left: 56px;
-        right: 14px;
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: 1.4fr 1fr 1fr 1fr;
-        grid-template-areas:
-            "aqi  aqi"
-            "temp hum"
-            "next dom"
-            "cat  cat";
-        gap: 12px;
-    }
-
-    #view-overview .callout .big.xl { font-size: clamp(4rem, 24vw, 6.5rem); letter-spacing: -3px; }
-    #view-overview .callout .big { font-size: clamp(1.8rem, 9vw, 2.6rem); }
-    #view-overview .callout .lbl { font-size: .72rem; }
-    #view-overview .callout .chip { font-size: .62rem; }
-    .tile-val { font-size: clamp(2rem, 9vw, 3rem); }
-    .tile.big .tile-val { font-size: clamp(3.2rem, 16vw, 5rem); }
-}
-
-/* long text safety */
-.tile .loc-name { padding-right: 84px; overflow-wrap: anywhere; font-size: clamp(1rem, 2.4vh, 1.5rem); }
-.tile-val, .callout .big { white-space: nowrap; }
-.tile { min-width: 0; overflow: hidden; }
-
-/* final fit tuning */
-.tile-val { font-size: clamp(1.7rem, 4.6vh, 3rem); }
-.tile.big .tile-val { font-size: clamp(2.8rem, 8vh, 5.2rem); }
-#ov-next { white-space: normal; font-size: clamp(1.4rem, 4.2vh, 2.6rem); line-height: 1.05; }
-#ov-next, #ov-aqi { max-width: 100%; }
-@media (max-width: 640px) {
-    .tile-val { font-size: clamp(1.8rem, 8vw, 2.6rem); }
-    .tile.big .tile-val { font-size: clamp(3rem, 15vw, 4.6rem); }
-    #ov-next { font-size: clamp(1.2rem, 5.4vw, 1.7rem); overflow-wrap: normal; }
+    .blades, .live-dot, .pin .ring { animation: none; }
 }
 </style>
 </head>
 
 <body>
 
-<div class="shell">
+<div class="app">
 
 <!-- =====================================================
-     LEFT : STAGE
+     SIDEBAR
 ===================================================== -->
 
-<section class="stage" id="stage">
+<aside class="side">
 
-    <!-- top bar -->
+    <div class="logo">
+        <svg viewBox="0 0 64 64">
+            <defs>
+                <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#6ee06f"/>
+                    <stop offset="1" stop-color="#1ea952"/>
+                </linearGradient>
+            </defs>
+            <path d="M10 54C8 30 24 10 56 8c2 30-12 48-38 48-3 0-5-.6-8-2z" fill="url(#lg)"/>
+            <path d="M12 52C24 38 36 26 50 14" stroke="#0a3a2a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        </svg>
+        <b>AeroSense AI</b>
+    </div>
 
-    <header class="topbar">
+    <nav class="nav" id="nav">
 
-        <div class="brand">
+        <button class="active" data-go="top">
+            <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
+            Dashboard
+        </button>
 
-            <div class="brand-mark">
+        <button data-go="sec-cards">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1.6"/><path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6M5.4 5.4a9.4 9.4 0 0 0 0 13.2M18.6 5.4a9.4 9.4 0 0 1 0 13.2"/></svg>
+            Live Monitor
+        </button>
 
-                <svg viewBox="0 0 24 24" fill="none" stroke="#14161a" stroke-width="1.4" stroke-linecap="round">
-                    <circle cx="12" cy="12" r="3"/>
-                    <circle cx="12" cy="12" r="7.5" stroke-dasharray="2 3"/>
-                    <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-                </svg>
+        <button data-go="sec-chart">
+            <svg viewBox="0 0 24 24"><path d="M6 20V11M12 20V4M18 20v-6"/></svg>
+            Analytics
+        </button>
 
-            </div>
+        <button data-go="sec-forecast">
+            <svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></svg>
+            Reports
+        </button>
 
-            <div class="brand-name">AeroSense</div>
+        <button data-go="alerts">
+            <svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 1 1 12 0c0 6 2 7 2 7H4s2-1 2-7z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+            Alerts
+        </button>
 
+        <button data-go="settings">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+            Settings
+        </button>
+
+    </nav>
+
+    <!-- wind turbines + forest -->
+    <svg class="side-art" viewBox="0 0 204 330" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+
+        <path d="M0 240 C40 205 80 228 120 212 C160 198 190 218 204 208 L204 330 L0 330Z" fill="#12583d" opacity=".85"/>
+
+        <!-- turbine 1 -->
+        <polygon points="76,240 80,240 79,172 77,172" fill="#e8f1ec"/>
+        <g class="blades" style="transform-origin:78px 170px">
+            <circle cx="78" cy="170" r="3.4" fill="#fff"/>
+            <path d="M78 170 L76.6 118 L79.4 118Z" fill="#fff"/>
+            <path d="M78 170 L121 196 L119.6 198.4Z" fill="#fff"/>
+            <path d="M78 170 L35 196 L36.4 198.4Z" fill="#fff"/>
+        </g>
+
+        <!-- turbine 2 -->
+        <polygon points="131,252 134,252 133,214 132,214" fill="#d7e6de"/>
+        <g class="blades b2" style="transform-origin:132.5px 212px">
+            <circle cx="132.5" cy="212" r="2.6" fill="#fff"/>
+            <path d="M132.5 212 L131.5 180 L133.5 180Z" fill="#fff"/>
+            <path d="M132.5 212 L160 228 L159 229.8Z" fill="#fff"/>
+            <path d="M132.5 212 L105 228 L106 229.8Z" fill="#fff"/>
+        </g>
+
+        <path d="M0 280 C50 250 100 276 150 258 C180 248 195 258 204 254 L204 330 L0 330Z" fill="#0b3d2c"/>
+        <g id="trees"></g>
+        <path d="M0 312 C60 296 130 314 204 300 L204 330 L0 330Z" fill="#062a1d"/>
+
+    </svg>
+
+</aside>
+
+
+<!-- =====================================================
+     MAIN
+===================================================== -->
+
+<main class="main" id="top">
+
+    <header class="head">
+
+        <div>
+            <h1>Air &amp; Atmosphere Monitoring</h1>
+            <p>Real-time air quality, gas concentration and environmental analytics</p>
         </div>
 
-        <div class="clock-chip">
+        <div class="head-actions">
 
-            <span id="clock-date">--</span>
-
-            <b id="clock-time">--:--:--</b>
-
-        </div>
-
-        <div class="top-actions">
-
-            <div class="conn-pill">
-
-                <span class="conn-dot off" id="conn-dot"></span>
-
+            <div class="live-pill">
+                <span class="live-dot off" id="conn-dot"></span>
                 <span id="conn-text">CONNECTING</span>
-
             </div>
 
-            <button class="icon-btn" id="btn-bell" aria-label="Alerts">
+            <span class="sep"></span>
 
-                <svg viewBox="0 0 24 24">
-                    <path d="M6 9a6 6 0 1 1 12 0c0 6 2 7 2 7H4s2-1 2-7z"/>
-                    <path d="M10 19a2 2 0 0 0 4 0"/>
-                </svg>
+            <div class="date-chip">
+                <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3 10h18"/><path d="M8 14h2M12 14h2M16 14h0M8 17.5h2M12 17.5h2"/></svg>
+                <span id="clock-full">--</span>
+            </div>
 
-                <span class="badge" id="bell-badge">0</span>
+            <span class="sep"></span>
 
+            <button class="ibtn" id="btn-bell" aria-label="Alerts">
+                <svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 1 1 12 0c0 6 2 7 2 7H4s2-1 2-7z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+                <span class="reddot" id="bell-dot"></span>
             </button>
 
-            <button class="icon-btn" id="btn-user" aria-label="Device">
-
-                <svg viewBox="0 0 24 24">
-                    <rect x="4" y="6" width="16" height="12" rx="2"/>
-                    <path d="M8 10h8M8 14h4"/>
-                </svg>
-
+            <button class="ibtn" id="btn-user" aria-label="Device">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-4 3.6-6 7-6s6.2 2 7 6"/></svg>
             </button>
 
-            <button class="icon-btn" id="btn-gear" aria-label="Settings">
+        </div>
 
-                <svg viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="3"/>
-                    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>
-                </svg>
+        <div class="popover" id="pop-bell">
+            <div class="pop-title">Alerts</div>
+            <div class="alert-list" id="alert-list">
+                <div class="alert-item">No alerts yet.<small>Alerts appear when air quality changes.</small></div>
+            </div>
+        </div>
 
-            </button>
-
+        <div class="popover" id="pop-user">
+            <div class="pop-title">Device</div>
+            <div class="pop-row"><span>Device</span><b>AQI-001</b></div>
+            <div class="pop-row"><span>Controller</span><b>ESP32-S3</b></div>
+            <div class="pop-row"><span>Particle sensor</span><b id="pop-pms">--</b></div>
+            <div class="pop-row"><span>GPS</span><b id="pop-gps">--</b></div>
+            <div class="pop-row"><span>Satellites</span><b id="pop-sats">--</b></div>
+            <div class="pop-row"><span>Accuracy</span><b id="pop-acc">--</b></div>
+            <div class="pop-row"><span>Last update</span><b id="pop-sync">--</b></div>
         </div>
 
     </header>
 
-    <!-- popovers -->
 
-    <div class="popover" id="pop-bell">
+    <!-- ===== ROW 1 : AQI + ENVIRONMENT ===== -->
 
-        <div class="pop-title">Alerts</div>
+    <section class="row r1">
 
-        <div class="alert-list" id="alert-list">
+        <div class="card aqi-card">
 
-            <div class="alert-item">
-                No alerts yet.
-                <small>Alerts appear when air quality worsens.</small>
+            <div class="gauge">
+                <svg viewBox="0 0 220 125" id="gauge-svg"></svg>
+                <div class="gauge-txt">
+                    <small>AQI</small>
+                    <div class="n" id="ov-aqi">--</div>
+                    <span class="gpill" id="ov-category">--</span>
+                </div>
             </div>
 
-        </div>
+            <div class="vdiv"></div>
 
-    </div>
-
-    <div class="popover" id="pop-user">
-
-        <div class="pop-title">Device</div>
-
-        <div class="pop-row"><span>Device</span><b>AQI-001</b></div>
-        <div class="pop-row"><span>Controller</span><b>ESP32-S3</b></div>
-        <div class="pop-row"><span>Particle sensor</span><b id="pop-pms">--</b></div>
-        <div class="pop-row"><span>GPS</span><b id="pop-gps">--</b></div>
-        <div class="pop-row"><span>Satellites</span><b id="pop-sats">--</b></div>
-        <div class="pop-row"><span>Accuracy</span><b id="pop-acc">--</b></div>
-        <div class="pop-row"><span>Last update</span><b id="pop-sync">--</b></div>
-
-    </div>
-
-    <div class="popover" id="pop-gear">
-
-        <div class="pop-title">Display</div>
-
-        <div class="switch-row">
-            <span>Motion &amp; breathing</span>
-            <button class="switch on" id="sw-motion" aria-label="Motion"></button>
-        </div>
-
-        <div class="switch-row">
-            <span>Auto-rotate views</span>
-            <button class="switch" id="sw-auto" aria-label="Auto rotate"></button>
-        </div>
-
-    </div>
-
-    <!-- hero title -->
-
-    <h1 class="hero-title">Air &amp;<br>Atmosphere</h1>
-
-    <!-- tabs -->
-
-    <nav class="tabs">
-
-        <div class="tab-wrap">
-            <button class="tab active" data-view="overview" aria-label="Overview">
-                <svg viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="8"/>
-                    <path d="M4 12h16M12 4c3 3 3 13 0 16M12 4c-3 3-3 13 0 16"/>
-                </svg>
-            </button>
-            <span class="tab-tip">Overview</span>
-        </div>
-
-        <div class="tab-wrap">
-            <button class="tab" data-view="map" aria-label="Map">
-                <svg viewBox="0 0 24 24">
-                    <path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11z"/>
-                    <circle cx="12" cy="10" r="2.4"/>
-                </svg>
-            </button>
-            <span class="tab-tip">Location map</span>
-        </div>
-
-        <div class="tab-wrap">
-            <button class="tab" data-view="forecast" aria-label="Forecast">
-                <svg viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="8"/>
-                    <path d="M12 7v5l3 2"/>
-                </svg>
-            </button>
-            <span class="tab-tip">AI forecast</span>
-        </div>
-
-        <div class="tab-wrap">
-            <button class="tab" data-view="history" aria-label="History">
-                <svg viewBox="0 0 24 24">
-                    <path d="M4 19V5M4 19h16"/>
-                    <path d="M7 15l4-4 3 3 5-6"/>
-                </svg>
-            </button>
-            <span class="tab-tip">History</span>
-        </div>
-
-        <div class="tab-wrap">
-            <button class="tab" data-view="advice" aria-label="Advice">
-                <svg viewBox="0 0 24 24">
-                    <path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>
-                </svg>
-            </button>
-            <span class="tab-tip">AI advice</span>
-        </div>
-
-    </nav>
-
-    <!-- views -->
-
-    <div class="views">
-
-        <!-- ================= OVERVIEW ================= -->
-
-        <div class="view active" id="view-overview">
-
-            <!-- dominant -->
-
-            <div class="callout mini-callout hide-sm" style="left:60%;top:30%;--fd:-1s">
-
-                <div class="mini-ico">
-
-                    <svg viewBox="0 0 40 40">
-                        <circle cx="20" cy="9" r="2.4"/>
-                        <circle cx="10" cy="22" r="2.4"/>
-                        <circle cx="30" cy="22" r="2.4"/>
-                        <circle cx="20" cy="33" r="2.4"/>
-                        <path d="M20 11.4v19.2M12 21l6-9M28 21l-6-9M12 23.5l6 8M28 23.5l-6 8"/>
+            <div class="aq-status">
+                <div class="aq-title">
+                    <svg viewBox="0 0 48 48">
+                        <path d="M6 40C4 22 16 8 42 6c1 22-9 36-28 36-3 0-5-.5-8-2z" fill="#eaf7ee" stroke="#22a455" stroke-width="2.4" stroke-linejoin="round"/>
+                        <path d="M9 38C18 28 27 19 37 11" stroke="#22a455" stroke-width="2.2" fill="none" stroke-linecap="round"/>
                     </svg>
-
+                    <span>Air Quality is <b id="aq-word" style="color:#16a34a">--</b></span>
                 </div>
 
-                <div>
+                <p class="aq-desc" id="aq-desc">Waiting for live data from the sensor node...</p>
 
-                    <div class="lbl">Dominant signal</div>
-
-                    <div class="chip" id="ov-dominant">--</div>
-
+                <div class="aq-meta">
+                    <span>Dominant: <b id="ov-dominant">--</b></span>
+                    <span id="ov-aqi-sub">sensor + ML</span>
                 </div>
 
-            </div>
-
-            <!-- category -->
-
-            <div class="callout mini-callout hide-sm" style="left:60%;top:42%;--fd:-2.2s">
-
-                <div class="mini-ico">
-
-                    <svg viewBox="0 0 40 40">
-                        <circle cx="20" cy="20" r="6"/>
-                        <circle cx="20" cy="20" r="11" stroke-dasharray="2 3"/>
-                        <circle cx="20" cy="20" r="16" opacity=".5"/>
-                    </svg>
-
-                </div>
-
-                <div>
-
-                    <div class="lbl">Air category</div>
-
-                    <div class="chip hot" id="ov-category">--</div>
-
-                </div>
-
-            </div>
-
-            <!-- AQI -->
-
-            <div class="callout" style="left:14%;top:27%;--fd:0s">
-
-                <div class="big xl" id="ov-aqi">--</div>
-
-                <div class="lbl">present AQI</div>
-
-                <div class="chip" id="ov-aqi-sub">sensor + ML</div>
-
-            </div>
-
-            <!-- temp -->
-
-            <div class="callout" style="left:14%;top:62%;--fd:-3s">
-
-                <div class="big"><span id="ov-temp">--</span><small>°C</small></div>
-
-                <div class="lbl">temperature</div>
-
-                <div class="chip" id="ov-temp-sub">DHT22</div>
-
-            </div>
-
-            <!-- humidity -->
-
-            <div class="callout" style="left:40%;top:62%;--fd:-4s">
-
-                <div class="big"><span id="ov-hum">--</span><small>%</small></div>
-
-                <div class="lbl">humidity</div>
-
-                <div class="chip" id="ov-hum-sub">relative</div>
-
-            </div>
-
-            <!-- AI next hour -->
-
-            <div class="callout hide-sm" style="left:66%;top:62%;--fd:-1.6s">
-
-                <div class="big" id="ov-next">--</div>
-
-                <div class="lbl">AI forecast +1h</div>
-
-                <div class="chip" id="ov-next-sub">waiting</div>
-
+                <ul class="adv" id="adv-list"></ul>
             </div>
 
         </div>
 
-        <!-- ================= MAP ================= -->
+        <div class="card env-card">
 
-        <div class="view" id="view-map">
+            <div class="env">
+                <svg viewBox="0 0 40 40" stroke="#dc2626"><rect x="16" y="5" width="8" height="22" rx="4" stroke="#374151"/><circle cx="20" cy="31" r="5.5" fill="#fee2e2" stroke="#dc2626"/><path d="M20 12v18" stroke="#dc2626" stroke-width="2.4"/><path d="M27 10h3M27 15h3" stroke="#374151"/></svg>
+                <div class="l">Temperature</div>
+                <div class="v"><span id="ov-temp">--</span> °C</div>
+            </div>
 
-            <div class="map-shell">
+            <div class="env">
+                <svg viewBox="0 0 40 40"><path d="M20 5C14 14 10 19 10 25a10 10 0 0 0 20 0c0-6-4-11-10-20z" fill="#e0f2fe" stroke="#0ea5e9"/><path d="M15 26a5 5 0 0 0 4 5" stroke="#0ea5e9"/></svg>
+                <div class="l">Humidity</div>
+                <div class="v"><span id="ov-hum">--</span> %</div>
+            </div>
 
-                <div id="device-map"></div>
+            <div class="env">
+                <svg viewBox="0 0 40 40" stroke="#3b82f6"><path d="M5 14h17a4 4 0 1 0-4-4"/><path d="M5 21h26a4 4 0 1 1-4 4"/><path d="M5 28h12a3 3 0 1 1-3 3"/></svg>
+                <div class="l">Wind Speed</div>
+                <div class="v"><span id="ov-wind">--</span> km/h</div>
+            </div>
 
-                <div class="map-card">
+            <div class="env">
+                <svg viewBox="0 0 40 40" stroke="#14532d"><circle cx="20" cy="20" r="15"/><path id="wind-arrow" d="M20 9l6 21-6-5-6 5z" fill="#14532d" style="transform-origin:20px 20px;transition:transform 1s"/></svg>
+                <div class="l">Wind Direction</div>
+                <div class="v" id="ov-winddir">--</div>
+            </div>
 
-                    <b id="map-place">Waiting for GPS fix...</b>
-
-                    <span id="map-coords">-- , --</span>
-
-                </div>
-
+            <div class="env">
+                <svg viewBox="0 0 40 40"><path d="M11 29a6 6 0 0 1-.6-12 8.5 8.5 0 0 1 16.2-1.6A6.8 6.8 0 0 1 28 29z" fill="#f3f4f6" stroke="#374151"/><path d="M14 23c2-1.5 3-1.5 5 0s3 1.5 5 0" stroke="#374151"/></svg>
+                <div class="l">Pressure</div>
+                <div class="v"><span id="ov-pres">--</span> hPa</div>
             </div>
 
         </div>
 
-        <!-- ================= FORECAST ================= -->
+    </section>
 
-        <div class="view" id="view-forecast">
 
-            <div class="fc-meta" id="fc-meta">Waiting for forecast...</div>
+    <!-- ===== ROW 2 : CHART + METRIC CARDS ===== -->
 
-            <div class="forecast-wrap">
+    <section class="row r2" id="sec-cards">
 
-                <div class="fc-card">
+        <div class="card chart-card" id="sec-chart">
 
-                    <div class="fc-time">+1 hour</div>
-
-                    <div>
-                        <div class="fc-val" id="fc1-val">--</div>
-                        <div class="fc-cat" id="fc1-cat">--</div>
-                    </div>
-
-                    <div>
-                        <div class="fc-sub" id="fc1-sub">Predicted AQI</div>
-                        <div class="fc-bar"><i id="fc1-bar"></i></div>
-                    </div>
-
+            <div class="ch-head">
+                <div class="ch-title">
+                    <svg viewBox="0 0 24 24"><path d="M2 12h4l2.5-7 4 14 3-9 1.5 2H22"/></svg>
+                    Real-Time Gas Concentration
                 </div>
 
-                <div class="fc-card">
+                <div class="range" id="range">
+                    <button class="active" data-r="live">Live</button>
+                    <button data-r="1h">1H</button>
+                    <button data-r="6h">6H</button>
+                    <button data-r="24h">24H</button>
+                    <button data-r="7d">7D</button>
+                </div>
+            </div>
 
-                    <div class="fc-time">+2 hours</div>
+            <div class="chart-box"><canvas id="gas-chart"></canvas></div>
 
-                    <div>
-                        <div class="fc-val" id="fc2-val">--</div>
-                        <div class="fc-cat" id="fc2-cat">--</div>
-                    </div>
+            <div class="legend" id="legend"></div>
 
-                    <div>
-                        <div class="fc-sub" id="fc2-sub">Predicted AQI</div>
-                        <div class="fc-bar"><i id="fc2-bar"></i></div>
-                    </div>
+        </div>
 
+        <div class="cards" id="cards"></div>
+
+    </section>
+
+
+    <!-- ===== ROW 3 : FORECAST + MAP ===== -->
+
+    <section class="row r3">
+
+        <div class="card fc-card" id="sec-forecast">
+
+            <div class="fc-head">
+                <div class="t">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3 10h18"/><circle cx="9" cy="15" r="1"/><circle cx="14" cy="15" r="1"/></svg>
+                    Air Quality Forecast
+                </div>
+                <span class="fc-tag">Next 3 hours</span>
+            </div>
+
+            <div class="fc-meta" id="fc-meta">AI forecast from the cloud ML model</div>
+
+            <div class="fc-row">
+
+                <div class="fc-cell">
+                    <div id="fc0-ico"></div>
+                    <div class="tm">Now</div>
+                    <span class="fc-pill" id="fc0-pill">AQI --</span>
                 </div>
 
-                <div class="fc-card">
+                <div class="fc-cell">
+                    <div id="fc1-ico"></div>
+                    <div class="tm" id="fc1-time">--</div>
+                    <span class="fc-pill" id="fc1-pill">AQI --</span>
+                </div>
 
-                    <div class="fc-time">+3 hours</div>
+                <div class="fc-cell">
+                    <div id="fc2-ico"></div>
+                    <div class="tm" id="fc2-time">--</div>
+                    <span class="fc-pill" id="fc2-pill">AQI --</span>
+                </div>
 
-                    <div>
-                        <div class="fc-val" id="fc3-val">--</div>
-                        <div class="fc-cat" id="fc3-cat">--</div>
-                    </div>
-
-                    <div>
-                        <div class="fc-sub" id="fc3-sub">Predicted AQI</div>
-                        <div class="fc-bar"><i id="fc3-bar"></i></div>
-                    </div>
-
+                <div class="fc-cell">
+                    <div id="fc3-ico"></div>
+                    <div class="tm" id="fc3-time">--</div>
+                    <span class="fc-pill" id="fc3-pill">AQI --</span>
                 </div>
 
             </div>
 
         </div>
 
-        <!-- ================= HISTORY ================= -->
+        <div class="card map-card" id="sec-map">
 
-        <div class="view" id="view-history">
-
-            <div class="history-wrap">
-
-                <div class="metric-chips" id="metric-chips"></div>
-
-                <div class="chart-stats">
-
-                    <span>min <b id="st-min">--</b></span>
-                    <span>avg <b id="st-avg">--</b></span>
-                    <span>max <b id="st-max">--</b></span>
-                    <span>samples <b id="st-n">0</b></span>
-
+            <div class="mp-head">
+                <div class="t">
+                    <svg viewBox="0 0 24 24"><path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>
+                    Device Location
                 </div>
-
-                <div class="chart-box">
-
-                    <canvas id="hist-chart"></canvas>
-
-                </div>
-
+                <span class="chip" id="loc-state">WAITING</span>
             </div>
 
-        </div>
-
-        <!-- ================= ADVICE ================= -->
-
-        <div class="view" id="view-advice">
-
-            <div class="advice-wrap">
-
-                <div class="ai-head">
-
-                    <div class="ai-cat" id="ai-cat">Waiting...</div>
-
-                    <div class="ai-pred" id="ai-pred"></div>
-
-                </div>
-
-                <div id="advice-lines">
-
-                    <div class="advice-line">
-                        <i></i>
-                        <span>Waiting for ML analysis from the cloud...</span>
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <!-- timeline -->
-
-    <footer class="timeline">
-
-        <div class="tl-title">
-
-            Today's Data
-
-            <small id="tl-count">0 samples</small>
-
-        </div>
-
-        <div class="tl-track" id="tl-track">
-
-            <div class="tl-bar" id="tl-bar"></div>
-
-            <div class="tl-labels" id="tl-labels"></div>
-
-            <div class="tl-tip" id="tl-tip"></div>
-
-        </div>
-
-        <button class="tl-go" id="tl-go" aria-label="Open history">↗</button>
-
-    </footer>
-
-</section>
-
-
-<!-- =====================================================
-     RIGHT : TILES
-===================================================== -->
-
-<section class="tiles" id="tiles">
-
-    <!-- PM2.5 -->
-
-    <article class="tile big t-green" data-metric="pm25" style="grid-area:pm25">
-
-        <div class="tile-head">
-            <span class="tile-label">PM2.5 · PMS7003</span>
-            <span class="tile-arrow">↗</span>
-        </div>
-
-        <div class="tile-main">
-            <div class="tile-val" id="v-pm25">--</div>
-            <div class="tile-unit">µg/m³</div>
-        </div>
-
-        <div class="tile-chip" id="c-pm25">--</div>
-
-        <div class="tile-foot">
-            <span>Cleaner</span>
-            <span id="f-pm25">CPCB scale</span>
-            <span>Hazier</span>
-        </div>
-
-    </article>
-
-    <!-- PM1.0 -->
-
-    <article class="tile t-yellow" data-metric="pm1" style="grid-area:pm1">
-
-        <div class="tile-head">
-            <span class="tile-label">PM1.0 · PMS7003</span>
-            <span class="tile-arrow">↗</span>
-        </div>
-
-        <div class="tile-main">
-            <div class="tile-val" id="v-pm1">--</div>
-            <div class="tile-unit">µg/m³</div>
-        </div>
-
-        <div class="tile-chip" id="c-pm1">--</div>
-
-        <div class="tile-foot">
-            <span>ultrafine particles</span>
-            <span id="f-pm1"></span>
-        </div>
-
-    </article>
-
-    <!-- DUST -->
-
-    <article class="tile t-dusk" data-metric="dust" style="grid-area:dust">
-
-        <div class="tile-head">
-            <span class="tile-label">Dust density · GP2Y1010</span>
-            <span class="tile-arrow">↗</span>
-        </div>
-
-        <div class="tile-main">
-            <div class="tile-val" id="v-dust">--</div>
-            <div class="tile-unit">µg/m³</div>
-        </div>
-
-        <div class="tile-chip" id="c-dust">--</div>
-
-        <div class="tile-sub" id="s-dust">-- V · -- mg/m³</div>
-
-        <div class="tile-foot">
-            <span>Clean</span>
-            <span>Dusty</span>
-            <span>Heavy</span>
-        </div>
-
-    </article>
-
-    <!-- CO -->
-
-    <article class="tile t-amber" data-metric="co" style="grid-area:co">
-
-        <div class="tile-head">
-            <span class="tile-label">Carbon monoxide · MQ-7</span>
-            <span class="tile-arrow">↗</span>
-        </div>
-
-        <div class="tile-main">
-            <div class="tile-val" id="v-co">--</div>
-            <div class="tile-unit">ppm (est.)</div>
-        </div>
-
-        <div class="tile-chip" id="c-co">--</div>
-
-        <div class="tile-foot">
-            <span>Low</span>
-            <span>High</span>
-        </div>
-
-    </article>
-
-    <!-- CH4 -->
-
-    <article class="tile t-forest" data-metric="ch4" style="grid-area:ch4">
-
-        <div class="tile-head">
-            <span class="tile-label">Methane · MQ-9</span>
-            <span class="tile-arrow">↗</span>
-        </div>
-
-        <div class="tile-main">
-            <div class="tile-val" id="v-ch4">--</div>
-            <div class="tile-unit">ppm (est.)</div>
-        </div>
-
-        <div class="tile-chip" id="c-ch4">--</div>
-
-        <div class="tile-foot">
-            <span>Low</span>
-            <span>High</span>
-        </div>
-
-    </article>
-
-    <!-- NH3 -->
-
-    <article class="tile t-rose" data-metric="nh3" style="grid-area:nh3">
-
-        <div class="tile-head">
-            <span class="tile-label">Ammonia · MQ-135</span>
-            <span class="tile-arrow">↗</span>
-        </div>
-
-        <div class="tile-main">
-            <div class="tile-val" id="v-nh3">--</div>
-            <div class="tile-unit">ppm (est.)</div>
-        </div>
-
-        <div class="tile-chip" id="c-nh3">--</div>
-
-        <div class="tile-foot">
-            <span>Low</span>
-            <span>High</span>
-        </div>
-
-    </article>
-
-    <!-- O3 -->
-
-    <article class="tile t-sky" data-metric="o3" style="grid-area:o3">
-
-        <div class="tile-head">
-            <span class="tile-label">Ozone · MQ-131</span>
-            <span class="tile-arrow">↗</span>
-        </div>
-
-        <div class="tile-main">
-            <div class="tile-val" id="v-o3">--</div>
-            <div class="tile-unit">ppb (est.)</div>
-        </div>
-
-        <div class="tile-chip" id="c-o3">--</div>
-
-        <div class="tile-foot">
-            <span>Low</span>
-            <span>High</span>
-        </div>
-
-    </article>
-
-    <!-- PM10 -->
-
-    <article class="tile t-forest" data-metric="pm10" style="grid-area:pm10">
-
-        <div class="tile-head">
-            <span class="tile-label">PM10 · PMS7003</span>
-            <span class="tile-arrow">↗</span>
-        </div>
-
-        <div class="tile-main">
-            <div class="tile-val" id="v-pm10">--</div>
-            <div class="tile-unit">µg/m³</div>
-        </div>
-
-        <div class="tile-chip" id="c-pm10">--</div>
-
-        <div class="tile-foot">
-            <span>Cleaner</span>
-            <span>Hazier</span>
-        </div>
-
-    </article>
-
-    <!-- LOCATION -->
-
-    <article class="tile t-mist" id="tile-loc" style="grid-area:loc">
-
-        <div class="tile-head">
-            <span class="tile-label">Device location</span>
-            <span class="tile-arrow">◎</span>
-        </div>
-
-        <div class="tile-chip" id="loc-state">WAITING</div>
-
-        <div class="loc-body">
+            <div class="map-wrap"><div id="device-map"></div></div>
 
             <div class="loc-name" id="loc-name">Waiting for GPS satellite fix...</div>
 
-            <div class="loc-grid">
+            <div class="loc-foot">
 
-                <span>LAT <b id="loc-lat">--</b></span>
-                <span>LON <b id="loc-lon">--</b></span>
-                <span>SATS <b id="loc-sats">--</b></span>
-                <span>ACC <b id="loc-acc">--</b></span>
+                <div class="loc-grid">
+                    <span>LAT <b id="loc-lat">--</b></span>
+                    <span>LON <b id="loc-lon">--</b></span>
+                    <span>SATS <b id="loc-sats">--</b></span>
+                    <span>ACC <b id="loc-acc">--</b></span>
+                </div>
+
+                <a class="loc-link hide" id="loc-link" href="#" target="_blank" rel="noopener">Open in Maps ↗</a>
 
             </div>
 
-            <a class="loc-link hide" id="loc-link" href="#" target="_blank" rel="noopener">OPEN IN MAPS ↗</a>
-
         </div>
 
-    </article>
+    </section>
 
-</section>
+</main>
 
 </div>
 
@@ -3000,689 +883,433 @@ const isHosted =
     location.protocol.startsWith("http") &&
     location.hostname.endsWith("onrender.com");
 
+const DEFAULT_POS = [22.5726, 88.3639];
+
 
 /* =========================================================
-   SMALL HELPERS
+   HELPERS
 ========================================================= */
 
 const $ = (id) => document.getElementById(id);
 
 function setText(id, value) {
-
     const el = $(id);
-
     if (el) el.textContent = value;
 }
 
 function num(value, decimals = 1) {
-
     const n = Number(value);
-
     if (!Number.isFinite(n)) return "--";
-
     return n.toFixed(decimals);
 }
 
-function clamp(v, a, b) {
-
-    return Math.max(a, Math.min(b, v));
-}
-
-function pad2(n) {
-
-    return String(n).padStart(2, "0");
-}
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function pad2(n) { return String(n).padStart(2, "0"); }
 
 function hhmm(ts) {
-
     const d = new Date(ts);
-
     return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
 }
 
 function hhmmss(ts) {
-
     const d = new Date(ts);
-
     return pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds());
 }
 
 function safeStorage(fn) {
-
-    try {
-        return fn();
-    } catch (e) {
-        return null;
-    }
+    try { return fn(); } catch (e) { return null; }
 }
 
 
 /* =========================================================
-   COLOR + LEVEL LOGIC
+   LEVELS / COLOURS
 ========================================================= */
 
-const LEVEL_COLORS = [
-    "#35b57a",
-    "#9ccf4a",
-    "#f1c232",
-    "#f08a4b",
-    "#e5586b",
-    "#b8203a"
-];
+const LEVEL_COLORS = ["#35b57a", "#9ccf4a", "#f1c232", "#f08a4b", "#e5586b", "#b8203a"];
+const LEVEL_DARK   = ["#15803d", "#4d7c0f", "#a16207", "#c2410c", "#be123c", "#881337"];
 
 function aqiIndex(v) {
-
     v = Number(v);
-
     if (v <= 50) return 0;
     if (v <= 100) return 1;
     if (v <= 200) return 2;
     if (v <= 300) return 3;
     if (v <= 400) return 4;
-
     return 5;
 }
 
-function aqiColor(v) {
-
-    return LEVEL_COLORS[aqiIndex(v)];
-}
+function aqiColor(v) { return LEVEL_COLORS[aqiIndex(v)]; }
 
 function aqiName(v) {
-
-    return [
-        "Good",
-        "Satisfactory",
-        "Moderate",
-        "Poor",
-        "Very poor",
-        "Severe"
-    ][aqiIndex(v)];
+    return ["Good", "Satisfactory", "Moderate", "Poor", "Very poor", "Severe"][aqiIndex(v)];
 }
 
-const LEVELS = {
+const AQ_DESC = [
+    "The air is clean and safe to breathe. No significant health risk.",
+    "Air quality is acceptable. Very sensitive people should take care.",
+    "Breathing discomfort is possible for people with lung or heart disease.",
+    "Prolonged exposure may cause breathing discomfort to most people.",
+    "Respiratory illness likely on prolonged exposure. Limit outdoor activity.",
+    "Serious health impact. Avoid outdoor exposure."
+];
 
+const LEVELS = {
     pm25: [[30, "Good"], [60, "Satisfactory"], [90, "Moderate"], [120, "Poor"], [250, "Very poor"], [Infinity, "Severe"]],
     pm10: [[50, "Good"], [100, "Satisfactory"], [250, "Moderate"], [350, "Poor"], [430, "Very poor"], [Infinity, "Severe"]],
-    pm1:  [[10, "Low"], [20, "Mild"], [35, "Moderate"], [60, "High"], [100, "Very high"], [Infinity, "Extreme"]],
-    dust: [[30, "Clean"], [60, "Light"], [100, "Dusty"], [150, "Heavy"], [200, "Very heavy"], [Infinity, "Extreme"]],
-    co:   [[1, "Low"], [2, "Mild"], [3.5, "Moderate"], [5, "High"], [8, "Very high"], [Infinity, "Extreme"]],
-    ch4:  [[100, "Low"], [200, "Mild"], [300, "Moderate"], [400, "High"], [500, "Very high"], [Infinity, "Extreme"]],
-    nh3:  [[3, "Low"], [6, "Mild"], [9, "Moderate"], [12, "High"], [16, "Very high"], [Infinity, "Extreme"]],
-    o3:   [[30, "Low"], [50, "Mild"], [70, "Moderate"], [90, "High"], [120, "Very high"], [Infinity, "Extreme"]]
+    pm1:  [[10, "Good"], [20, "Mild"], [35, "Moderate"], [60, "High"], [100, "Very high"], [Infinity, "Extreme"]],
+    dust: [[30, "Good"], [60, "Normal"], [100, "Moderate"], [150, "High"], [200, "Very high"], [Infinity, "Extreme"]],
+    co:   [[1, "Normal"], [2, "Mild"], [3.5, "Moderate"], [5, "High"], [8, "Very high"], [Infinity, "Extreme"]],
+    ch4:  [[100, "Normal"], [200, "Mild"], [300, "Moderate"], [400, "High"], [500, "Very high"], [Infinity, "Extreme"]],
+    nh3:  [[3, "Good"], [6, "Mild"], [9, "Moderate"], [12, "High"], [16, "Very high"], [Infinity, "Extreme"]],
+    o3:   [[30, "Good"], [50, "Mild"], [70, "Moderate"], [90, "High"], [120, "Very high"], [Infinity, "Extreme"]]
 };
 
 function levelOf(key, value) {
-
     const table = LEVELS[key];
-
     for (let i = 0; i < table.length; i++) {
-
-        if (value <= table[i][0]) {
-
-            return { index: i, name: table[i][1] };
-        }
+        if (value <= table[i][0]) return { index: i, name: table[i][1] };
     }
-
     return { index: table.length - 1, name: table[table.length - 1][1] };
 }
 
 
 /* =========================================================
-   METRICS
+   METRIC DEFINITIONS + HISTORY
 ========================================================= */
 
-const METRICS = {
+const CARDS = [
+    { k: "pm25", name: "PM2.5", sub: "Fine Particles",       unit: "µg/m³", dec: 0, max: 150, ico: "dots",  col: "#22c55e" },
+    { k: "pm10", name: "PM10",  sub: "Coarse Particles",     unit: "µg/m³", dec: 0, max: 250, ico: "dots",  col: "#f97316" },
+    { k: "co",   name: "CO",    sub: "Carbon Monoxide",      unit: "ppm",   dec: 2, max: 5,   ico: "mol" },
+    { k: "ch4",  name: "CH4",   sub: "Methane",              unit: "ppm",   dec: 0, max: 500, ico: "mol" },
+    { k: "nh3",  name: "NH3",   sub: "Ammonia",              unit: "ppm",   dec: 2, max: 16,  ico: "cloud", txt: "" },
+    { k: "o3",   name: "O3",    sub: "Ozone",                unit: "ppb",   dec: 0, max: 100, ico: "cloud", txt: "O3" },
+    { k: "dust", name: "Dust",  sub: "Dust Density",         unit: "µg/m³", dec: 0, max: 200, ico: "burst", col: "#f59e0b" },
+    { k: "pm1",  name: "PM1.0", sub: "Ultrafine Particles",  unit: "µg/m³", dec: 0, max: 80,  ico: "dots",  col: "#14b8a6" }
+];
 
-    aqi:  { label: "AQI",         unit: "",       dec: 0, max: 300 },
-    pm25: { label: "PM2.5",       unit: "µg/m³",  dec: 0, max: 150 },
-    pm1:  { label: "PM1.0",       unit: "µg/m³",  dec: 0, max: 80  },
-    pm10: { label: "PM10",        unit: "µg/m³",  dec: 0, max: 250 },
-    dust: { label: "Dust",        unit: "µg/m³",  dec: 0, max: 200 },
-    co:   { label: "CO",          unit: "ppm",    dec: 2, max: 5   },
-    ch4:  { label: "CH4",         unit: "ppm",    dec: 0, max: 500 },
-    nh3:  { label: "NH3",         unit: "ppm",    dec: 2, max: 16  },
-    o3:   { label: "O3",          unit: "ppb",    dec: 0, max: 100 },
-    temp: { label: "Temperature", unit: "°C",     dec: 1, max: 50  },
-    hum:  { label: "Humidity",    unit: "%",      dec: 1, max: 100 }
-};
+const HIST_KEYS = ["aqi", "temp", "hum", "pm25", "pm1", "pm10", "dust", "co", "ch4", "nh3", "o3"];
 
-const HIST_MAX = 150;
-
+const HIST_MAX = 60;
 const hist = {};
-
-Object.keys(METRICS).forEach((k) => {
-
-    hist[k] = [];
-});
+HIST_KEYS.forEach((k) => (hist[k] = []));
 
 function pushHist(key, value, ts) {
-
     const n = Number(value);
-
     if (!Number.isFinite(n)) return;
-
     hist[key].push({ t: ts, v: n });
-
     if (hist[key].length > HIST_MAX) hist[key].shift();
 }
 
 
 /* =========================================================
-   WIREFRAME ART
+   ICONS
 ========================================================= */
 
-const SVGNS = "http://www.w3.org/2000/svg";
-
-function ellipse(cx, cy, rx, ry, cls = "w", extra = "") {
-
-    return `<ellipse class="${cls}" cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" rx="${rx.toFixed(2)}" ry="${ry.toFixed(2)}" ${extra}/>`;
+function icoDots(c) {
+    let s = "";
+    for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2;
+        s += `<circle cx="${(20 + Math.cos(a) * 15).toFixed(1)}" cy="${(20 + Math.sin(a) * 15).toFixed(1)}" r="1.9" fill="${c}"/>`;
+    }
+    for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 + .4;
+        s += `<circle cx="${(20 + Math.cos(a) * 8.5).toFixed(1)}" cy="${(20 + Math.sin(a) * 8.5).toFixed(1)}" r="1.6" fill="${c}" opacity=".8"/>`;
+    }
+    s += `<circle cx="20" cy="20" r="2.6" fill="${c}"/>`;
+    return `<svg viewBox="0 0 40 40">${s}</svg>`;
 }
 
-/* two stacked lens-spheres (PM2.5 hero) */
-
-function artSpheres(frac) {
-
-    let out = "";
-
-    const rings = 16;
-
-    const stack = (cy, r) => {
-
-        for (let j = 0; j < rings; j++) {
-
-            const t = (j / (rings - 1)) * 2 - 1;
-
-            const y = cy + t * r;
-
-            const rx = r * Math.sqrt(Math.max(0, 1 - t * t));
-
-            out += ellipse(100, y, rx, rx * .22, "w");
-        }
-    };
-
-    const spread = 6 + frac * 14;
-
-    stack(112 - spread, 50);
-    stack(196 + spread, 50);
-
-    out += `<line class="w faint" x1="100" y1="40" x2="100" y2="270"/>`;
-
-    const dy = 70 + frac * 160;
-
-    out += `<circle class="dot" cx="100" cy="${dy.toFixed(1)}" r="4.5"/>`;
-
-    out += `<circle class="w" cx="100" cy="${dy.toFixed(1)}" r="9"/>`;
-
-    return out;
+function icoMol() {
+    return `<svg viewBox="0 0 40 40" fill="none" stroke="#1f2937" stroke-width="2" stroke-linecap="round">
+        <circle cx="20" cy="9" r="3.6" fill="#fff"/><circle cx="9" cy="29" r="4.4" fill="#fff"/><circle cx="31" cy="29" r="3.6" fill="#fff"/>
+        <path d="M20 12.8l-8.2 12.6M20 12.8l9.4 13.4M13.4 29h13.4"/><circle cx="20" cy="9" r="1.6" fill="#22c55e" stroke="none"/></svg>`;
 }
 
-/* concentric petals (CO) */
-
-function artPetals(frac) {
-
-    let out = "";
-
-    const n = 9;
-
-    const r = 52 + frac * 22;
-
-    for (let i = 0; i < n; i++) {
-
-        const a = (i * 180) / n;
-
-        out += ellipse(100, 100, r, r * .34, "w", `transform="rotate(${a} 100 100)"`);
-    }
-
-    out += `<circle class="w faint" cx="100" cy="100" r="${(r * .35).toFixed(1)}"/>`;
-
-    out += `<circle class="dot" cx="100" cy="100" r="4.5"/>`;
-
-    return out;
+function icoCloud(txt) {
+    return `<svg viewBox="0 0 40 40" fill="none" stroke="#2563eb" stroke-width="2" stroke-linejoin="round">
+        <path d="M10 31a7 7 0 0 1-.8-13.9 10 10 0 0 1 19-1.8A7.8 7.8 0 0 1 30 31z" fill="#eff6ff"/>
+        ${txt ? `<text x="20" y="27" text-anchor="middle" font-size="9.5" font-weight="700" font-family="Inter,sans-serif" fill="#2563eb" stroke="none">${txt}</text>` : ""}</svg>`;
 }
 
-/* funnel / cone (CH4) */
-
-function artCone(frac) {
-
-    let out = "";
-
-    const rings = 11;
-
-    const top = 44;
-
-    const bottom = 160;
-
-    for (let i = 0; i < rings; i++) {
-
-        const t = i / (rings - 1);
-
-        const y = top + t * (bottom - top);
-
-        const rx = (62 + frac * 16) * (1 - t * .85);
-
-        out += ellipse(100, y, rx, rx * .26, "w");
+function icoBurst(c) {
+    let s = "";
+    for (let i = 0; i < 14; i++) {
+        const a = (i / 14) * Math.PI * 2;
+        s += `<line x1="${(20 + Math.cos(a) * 9).toFixed(1)}" y1="${(20 + Math.sin(a) * 9).toFixed(1)}" x2="${(20 + Math.cos(a) * 15).toFixed(1)}" y2="${(20 + Math.sin(a) * 15).toFixed(1)}" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/>`;
     }
-
-    out += `<line class="w faint" x1="${(38 - frac * 8).toFixed(1)}" y1="${top}" x2="96" y2="${bottom}"/>`;
-
-    out += `<line class="w faint" x1="${(162 + frac * 8).toFixed(1)}" y1="${top}" x2="104" y2="${bottom}"/>`;
-
-    out += `<circle class="dot" cx="100" cy="${bottom + 8}" r="4.5"/>`;
-
-    return out;
+    s += `<circle cx="20" cy="20" r="5.5" fill="${c}"/><circle cx="20" cy="20" r="8" fill="none" stroke="${c}" stroke-width="1" stroke-dasharray="1.5 2.5"/>`;
+    return `<svg viewBox="0 0 40 40">${s}</svg>`;
 }
 
-/* rotated orbit rings (NH3 / PM10) */
-
-function artOrbit(frac) {
-
-    let out = "";
-
-    const n = 7;
-
-    for (let i = 0; i < n; i++) {
-
-        const r = 24 + i * (6 + frac * 4);
-
-        out += ellipse(100, 100, r, r * .46, "w", `transform="rotate(${-24 + i * 7} 100 100)"`);
-    }
-
-    const ang = frac * Math.PI * 2;
-
-    const rr = 24 + (n - 1) * (6 + frac * 4);
-
-    const x = 100 + Math.cos(ang) * rr * .9;
-
-    const y = 100 + Math.sin(ang) * rr * .42;
-
-    out += `<circle class="dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.5"/>`;
-
-    return out;
+function iconFor(c) {
+    if (c.ico === "dots") return icoDots(c.col);
+    if (c.ico === "mol") return icoMol();
+    if (c.ico === "cloud") return icoCloud(c.txt);
+    return icoBurst(c.col);
 }
 
-/* arcs + dots (Dust) */
-
-function artDial(frac) {
-
-    let out = "";
-
-    const baseY = 160;
-
-    for (let i = 0; i < 4; i++) {
-
-        const r = 70 + i * 26;
-
-        const x0 = 200 - r * 1.35;
-
-        const x1 = 200 + r * 1.35;
-
-        out += `<path class="w" d="M ${x0.toFixed(1)} ${baseY} A ${(r * 1.35).toFixed(1)} ${r} 0 0 1 ${x1.toFixed(1)} ${baseY}"/>`;
-    }
-
-    const dots = 7;
-
-    const active = Math.round(frac * (dots - 1));
-
-    for (let i = 0; i < dots; i++) {
-
-        const x = 60 + i * (280 / (dots - 1));
-
-        out += `<circle cx="${x.toFixed(1)}" cy="${baseY + 14}" r="${i === active ? 5 : 2.4}" class="${i === active ? "dot" : ""}" fill="${i === active ? "" : "rgba(255,255,255,.85)"}"/>`;
-    }
-
-    return out;
-}
-
-/* waves (PM1 / O3) */
-
-const waveRegistry = [];
-
-function registerWave(svgId, lines, ampBase) {
-
-    const svg = $(svgId);
-
-    if (!svg) return;
-
-    let html = "";
-
-    for (let i = 0; i < lines; i++) {
-
-        html += `<path class="w" id="${svgId}-w${i}" d=""/>`;
-    }
-
-    html += `<circle class="dot" id="${svgId}-dot" cx="0" cy="0" r="4.5"/>`;
-
-    svg.innerHTML = html;
-
-    waveRegistry.push({
-
-        svgId,
-        lines,
-        amp: ampBase,
-        ampTarget: ampBase,
-        speed: 1,
-        phase: Math.random() * 6
-    });
-}
-
-function setWaveAmp(svgId, amp, speed) {
-
-    const w = waveRegistry.find((x) => x.svgId === svgId);
-
-    if (!w) return;
-
-    w.ampTarget = amp;
-
-    w.speed = speed;
-}
-
-function animateWaves(ts) {
-
-    const t = ts / 1000;
-
-    for (const w of waveRegistry) {
-
-        w.amp += (w.ampTarget - w.amp) * 0.04;
-
-        let lastY = 100;
-
-        for (let i = 0; i < w.lines; i++) {
-
-            const path = $(w.svgId + "-w" + i);
-
-            if (!path) continue;
-
-            let d = "";
-
-            const steps = 40;
-
-            for (let s = 0; s <= steps; s++) {
-
-                const x = (s / steps) * 400;
-
-                const y =
-                    120 +
-                    Math.sin((x / 400) * Math.PI * 4 + t * w.speed + i * .55 + w.phase) *
-                    w.amp *
-                    (.55 + i * .08) +
-                    Math.sin((x / 400) * Math.PI * 2 - t * .6 * w.speed + i) * (w.amp * .35);
-
-                d += (s === 0 ? "M" : "L") + x.toFixed(1) + " " + y.toFixed(1) + " ";
-
-                if (s === Math.round(steps * .86) && i === 0) lastY = y;
-            }
-
-            path.setAttribute("d", d);
-        }
-
-        const dot = $(w.svgId + "-dot");
-
-        if (dot) {
-
-            dot.setAttribute("cx", (400 * .86).toFixed(1));
-
-            dot.setAttribute("cy", lastY.toFixed(1));
-        }
-    }
-
-    requestAnimationFrame(animateWaves);
-}
-
-/* orb wire (overview) */
-
-function drawOrbWire(colorHex) {
-
-    const svg = $("orb-wire");
-
-    if (!svg) return;
-
-    let out = "";
-
-    const lat = 12;
-
-    for (let j = 0; j < lat; j++) {
-
-        const t = (j / (lat - 1)) * 2 - 1;
-
-        const y = 100 + t * 78;
-
-        const rx = 78 * Math.sqrt(Math.max(0, 1 - t * t));
-
-        out += `<ellipse cx="100" cy="${y.toFixed(1)}" rx="${rx.toFixed(1)}" ry="${(rx * .2).toFixed(1)}" fill="none" stroke="rgba(20,22,26,.16)" stroke-width="0.6"/>`;
-    }
-
-    for (let m = 0; m < 6; m++) {
-
-        out += `<ellipse cx="100" cy="100" rx="${(78 * Math.abs(Math.cos((m * Math.PI) / 6))).toFixed(1)}" ry="78" fill="none" stroke="rgba(20,22,26,.12)" stroke-width="0.6"/>`;
-    }
-
-    out += `<circle cx="100" cy="100" r="78" fill="none" stroke="${colorHex}" stroke-opacity=".5" stroke-width="0.9"/>`;
-
-    svg.innerHTML = out;
+/* forecast weather-style icons */
+
+const WX = {
+    sun: `<svg viewBox="0 0 32 32"><g stroke="#f59e0b" stroke-width="2" stroke-linecap="round"><path d="M16 3v3M16 26v3M3 16h3M26 16h3M6.8 6.8L9 9M23 23l2.2 2.2M25.2 6.8L23 9M9 23l-2.2 2.2"/></g><circle cx="16" cy="16" r="6" fill="#fbbf24"/></svg>`,
+    sunCloud: `<svg viewBox="0 0 32 32"><g stroke="#f59e0b" stroke-width="2" stroke-linecap="round"><path d="M12 3v2.5M3.5 11.5H6M5.8 5.8l1.8 1.8M18.2 5.8l-1.8 1.8"/></g><circle cx="12" cy="11.5" r="5" fill="#fbbf24"/><path d="M11 27a5 5 0 0 1-.4-10 6.5 6.5 0 0 1 12.4-1A5.3 5.3 0 0 1 24 27z" fill="#e0f2fe" stroke="#60a5fa" stroke-width="1.6" stroke-linejoin="round"/></svg>`,
+    cloud: `<svg viewBox="0 0 32 32"><path d="M9 25a5.5 5.5 0 0 1-.5-11 7.5 7.5 0 0 1 14.3-1.3A6 6 0 0 1 24 25z" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
+    moon: `<svg viewBox="0 0 32 32"><path d="M22 20.5A9.5 9.5 0 0 1 11.5 6 9.5 9.5 0 1 0 22 20.5z" fill="#6366f1"/><circle cx="24" cy="8" r="1" fill="#a5b4fc"/><circle cx="27" cy="13" r=".8" fill="#a5b4fc"/></svg>`
+};
+
+function wxIcon(aqi, hour) {
+    if (hour >= 19 || hour < 5) return WX.moon;
+    const i = Number.isFinite(aqi) ? aqiIndex(aqi) : 0;
+    if (i === 0) return WX.sun;
+    if (i === 1) return WX.sunCloud;
+    return WX.cloud;
 }
 
 
 /* =========================================================
-   TILE UPDATE
+   SIDEBAR TREES
 ========================================================= */
 
-const artCache = {};
+(function buildTrees() {
 
-function drawArt(key, type, frac) {
+    const g = $("trees");
+    let out = "";
+    const xs = [4, 16, 27, 40, 52, 64, 150, 162, 174, 186, 197, 120, 100];
 
-    const svg = $("art-" + key);
+    xs.forEach((x, i) => {
+        const h = 20 + ((i * 7) % 14);
+        const y = 296 - (i % 3) * 5;
+        const c = i % 2 ? "#0a3a29" : "#0f4a34";
+        for (let k = 0; k < 3; k++) {
+            const w = 7 + (2 - k) * -2 + 6;
+            const top = y - h + k * (h / 3.2);
+            out += `<polygon points="${x},${top.toFixed(1)} ${(x - w / 1.6).toFixed(1)},${(top + h / 2.2).toFixed(1)} ${(x + w / 1.6).toFixed(1)},${(top + h / 2.2).toFixed(1)}" fill="${c}"/>`;
+        }
+    });
 
-    if (!svg) return;
+    g.innerHTML = out;
+})();
 
-    const q = Math.round(frac * 40);
 
-    if (artCache[key] === q) return;
+/* =========================================================
+   GAUGE
+========================================================= */
 
-    artCache[key] = q;
+const GSTOPS = [
+    [0,   [31, 157, 85]],
+    [.25, [132, 204, 22]],
+    [.5,  [250, 204, 21]],
+    [.75, [249, 115, 22]],
+    [1,   [239, 68, 68]]
+];
 
-    let html = "";
-
-    if (type === "spheres") html = artSpheres(frac);
-    else if (type === "petals") html = artPetals(frac);
-    else if (type === "cone") html = artCone(frac);
-    else if (type === "orbit") html = artOrbit(frac);
-    else if (type === "dial") html = artDial(frac);
-
-    svg.innerHTML = html;
+function gaugeColor(t) {
+    t = clamp(t, 0, 1);
+    for (let i = 0; i < GSTOPS.length - 1; i++) {
+        const [t0, c0] = GSTOPS[i];
+        const [t1, c1] = GSTOPS[i + 1];
+        if (t <= t1) {
+            const f = (t - t0) / (t1 - t0);
+            return `rgb(${c0.map((v, j) => Math.round(v + (c1[j] - v) * f)).join(",")})`;
+        }
+    }
+    return "rgb(239,68,68)";
 }
 
-const TILE_ART = {
+function drawGauge(aqi) {
 
-    pm25: "spheres",
-    pm10: "orbit",
-    co: "petals",
-    ch4: "cone",
-    nh3: "orbit",
-    dust: "dial"
-};
+    const N = 34, cx = 110, cy = 112, r = 92;
+    let out = "";
+
+    for (let i = 0; i < N; i++) {
+
+        const a0 = Math.PI - (i / N) * Math.PI;
+        const a1 = Math.PI - ((i + .8) / N) * Math.PI;
+
+        const x0 = cx + r * Math.cos(a0), y0 = cy - r * Math.sin(a0);
+        const x1 = cx + r * Math.cos(a1), y1 = cy - r * Math.sin(a1);
+
+        out += `<path d="M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}" stroke="${gaugeColor((i + .4) / N)}" stroke-width="17" fill="none"/>`;
+    }
+
+    if (Number.isFinite(aqi)) {
+
+        const t = clamp(aqi / 500, 0, 1);
+        const a = Math.PI - t * Math.PI;
+        const mx = cx + r * Math.cos(a), my = cy - r * Math.sin(a);
+
+        out += `<circle cx="${mx.toFixed(2)}" cy="${my.toFixed(2)}" r="10.5" fill="#fff" stroke="${gaugeColor(t)}" stroke-width="3.5" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))"/>`;
+    }
+
+    $("gauge-svg").innerHTML = out;
+}
+
+drawGauge(NaN);
+
+
+/* =========================================================
+   METRIC CARDS
+========================================================= */
+
+(function buildCards() {
+
+    $("cards").innerHTML = CARDS.map((c) => `
+        <article class="mc" id="card-${c.k}">
+            <div class="mc-ico">${iconFor(c)}</div>
+            <div>
+                <div class="mc-name">${c.name}</div>
+                <div class="mc-sub" id="sub-${c.k}">${c.sub}</div>
+                <div class="mc-val"><b id="v-${c.k}">--</b><span>${c.unit}</span></div>
+                <div class="mc-bar"><i id="bar-${c.k}"></i></div>
+            </div>
+            <span class="mc-badge" id="c-${c.k}">--</span>
+            <svg class="mc-spark" id="sp-${c.k}" viewBox="0 0 100 30" preserveAspectRatio="none"></svg>
+        </article>
+    `).join("");
+})();
+
+function drawSpark(key, color) {
+
+    const el = $("sp-" + key);
+    if (!el) return;
+
+    const a = hist[key].slice(-24).map((p) => p.v);
+
+    if (a.length < 2) { el.innerHTML = ""; return; }
+
+    const mn = Math.min(...a), mx = Math.max(...a), rng = mx - mn || 1;
+
+    const pts = a.map((v, i) =>
+        ((i / (a.length - 1)) * 100).toFixed(1) + "," + (26 - ((v - mn) / rng) * 22).toFixed(1)
+    );
+
+    el.innerHTML = `<polyline points="${pts.join(" ")}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+}
 
 function updateTile(key, value, opts = {}) {
 
-    const meta = METRICS[key];
+    const c = CARDS.find((x) => x.k === key);
+    if (!c) return;
 
     const n = Number(value);
-
     const valid = Number.isFinite(n) && !opts.offline;
 
-    setText("v-" + key, valid ? num(n, meta.dec) : "--");
+    setText("v-" + key, valid ? num(n, c.dec) : "--");
 
-    const frac = valid ? clamp(n / meta.max, 0, 1) : 0;
+    const badge = $("c-" + key);
+    const bar = $("bar-" + key);
+    const card = $("card-" + key);
 
-    const chip = $("c-" + key);
+    if (!valid) {
 
-    if (chip) {
-
-        if (opts.offline) {
-
-            chip.textContent = "OFFLINE";
-
-        } else if (valid && LEVELS[key]) {
-
-            chip.textContent = levelOf(key, n).name;
-        }
+        badge.textContent = opts.offline ? "OFFLINE" : "--";
+        badge.style.background = "#e5e7eb";
+        badge.style.color = "#6b7280";
+        bar.style.width = "0%";
+        card.style.background = "";
+        return;
     }
 
-    if (TILE_ART[key]) drawArt(key, TILE_ART[key], frac);
+    const lv = levelOf(key, n);
+    const col = LEVEL_COLORS[lv.index];
 
-    if (key === "pm1") setWaveAmp("art-pm1", 8 + frac * 34, .8 + frac * 2.2);
+    badge.textContent = lv.name;
+    badge.style.background = col + "30";
+    badge.style.color = LEVEL_DARK[lv.index];
 
-    if (key === "o3") setWaveAmp("art-o3", 8 + frac * 34, .8 + frac * 2.2);
+    bar.style.width = clamp((n / c.max) * 100, 5, 100) + "%";
+    bar.style.background = col;
+
+    card.style.background = lv.index >= 2 ? `linear-gradient(90deg, ${col}26, #fff 60%)` : "";
+
+    drawSpark(key, lv.index >= 2 ? LEVEL_DARK[lv.index] : "#22a455");
 }
 
 
 /* =========================================================
-   VIEWS / TABS
+   POPOVERS + NAV
 ========================================================= */
 
-let currentView = "overview";
-
-let mapRef = null;
-
-function showView(name) {
-
-    currentView = name;
-
-    document.querySelectorAll(".view").forEach((v) => {
-
-        v.classList.toggle("active", v.id === "view-" + name);
-    });
-
-    document.querySelectorAll(".tab").forEach((t) => {
-
-        t.classList.toggle("active", t.dataset.view === name);
-    });
-
-    if (name === "map" && mapRef) {
-
-        setTimeout(() => mapRef.invalidateSize(), 120);
-    }
-
-    if (name === "history") {
-
-        renderHistory();
-    }
-}
-
-document.querySelectorAll(".tab").forEach((tab) => {
-
-    tab.addEventListener("click", () => showView(tab.dataset.view));
-});
-
-
-/* =========================================================
-   POPOVERS + SETTINGS
-========================================================= */
-
-const POPS = {
-
-    "btn-bell": "pop-bell",
-    "btn-user": "pop-user",
-    "btn-gear": "pop-gear"
-};
+const POPS = { "btn-bell": "pop-bell", "btn-user": "pop-user" };
 
 function closePops() {
-
     Object.values(POPS).forEach((id) => $(id).classList.remove("open"));
 }
 
+function openPop(btnId) {
+
+    const pop = $(POPS[btnId]);
+    const was = pop.classList.contains("open");
+
+    closePops();
+
+    if (!was) pop.classList.add("open");
+
+    if (btnId === "btn-bell") {
+        unreadAlerts = 0;
+        renderBadge();
+    }
+}
+
 Object.keys(POPS).forEach((btnId) => {
-
     $(btnId).addEventListener("click", (e) => {
-
         e.stopPropagation();
-
-        const pop = $(POPS[btnId]);
-
-        const was = pop.classList.contains("open");
-
-        closePops();
-
-        if (!was) pop.classList.add("open");
-
-        if (btnId === "btn-bell") {
-
-            unreadAlerts = 0;
-
-            renderBadge();
-        }
+        openPop(btnId);
     });
 });
 
 document.addEventListener("click", (e) => {
-
     if (!e.target.closest(".popover")) closePops();
 });
 
-let autoRotate = false;
+document.querySelectorAll("#nav button").forEach((b) => {
 
-let autoTimer = null;
+    b.addEventListener("click", (e) => {
 
-function bindSwitch(id, onChange) {
+        e.stopPropagation();
 
-    const el = $(id);
+        document.querySelectorAll("#nav button").forEach((x) => x.classList.toggle("active", x === b));
 
-    el.addEventListener("click", () => {
+        const go = b.dataset.go;
 
-        el.classList.toggle("on");
+        if (go === "alerts") { window.scrollTo({ top: 0, behavior: "smooth" }); closePops(); $("pop-bell").classList.add("open"); unreadAlerts = 0; renderBadge(); return; }
+        if (go === "settings") { window.scrollTo({ top: 0, behavior: "smooth" }); closePops(); $("pop-user").classList.add("open"); return; }
 
-        onChange(el.classList.contains("on"));
+        closePops();
+
+        const el = go === "top" ? null : $(go);
+
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        else window.scrollTo({ top: 0, behavior: "smooth" });
     });
-}
-
-
-bindSwitch("sw-motion", (on) => document.body.classList.toggle("calm", !on));
-
-bindSwitch("sw-auto", (on) => {
-
-    autoRotate = on;
-
-    clearInterval(autoTimer);
-
-    if (on) {
-
-        const order = ["overview", "map", "forecast", "history", "advice"];
-
-        autoTimer = setInterval(() => {
-
-            const i = order.indexOf(currentView);
-
-            showView(order[(i + 1) % order.length]);
-
-        }, 9000);
-    }
 });
 
 
 /* =========================================================
-   CLOCK
+   CLOCK + FORECAST TIME LABELS
 ========================================================= */
+
+function hourLabel(offset) {
+
+    const d = new Date(Date.now() + offset * 3600000);
+    const h = d.getHours();
+
+    return (h % 12 || 12) + " " + (h < 12 ? "AM" : "PM");
+}
 
 function tickClock() {
 
     const d = new Date();
 
-    setText(
+    const date = d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "2-digit", year: "numeric" });
 
-        "clock-date",
+    setText("clock-full", date + "  " + hhmmss(d.getTime()));
 
-        d.toLocaleDateString(undefined, {
-            weekday: "short",
-            day: "2-digit",
-            month: "short"
-        })
-    );
-
-    setText("clock-time", hhmmss(d.getTime()));
+    for (let h = 1; h <= 3; h++) setText("fc" + h + "-time", hourLabel(h));
 }
 
 setInterval(tickClock, 1000);
-
 tickClock();
 
 
@@ -3691,27 +1318,18 @@ tickClock();
 ========================================================= */
 
 const alerts = [];
-
 let unreadAlerts = 0;
-
 let lastAqiIndex = null;
 
 function renderBadge() {
-
-    const b = $("bell-badge");
-
-    b.textContent = unreadAlerts;
-
-    b.classList.toggle("show", unreadAlerts > 0);
+    $("bell-dot").classList.toggle("show", unreadAlerts > 0);
 }
 
 function renderAlerts() {
 
-    const list = $("alert-list");
-
     if (!alerts.length) return;
 
-    list.innerHTML = alerts
+    $("alert-list").innerHTML = alerts
         .slice()
         .reverse()
         .map((a) => `<div class="alert-item">${a.text}<small>${a.time}</small></div>`)
@@ -3727,20 +1345,16 @@ function pushAlert(text) {
     unreadAlerts++;
 
     renderBadge();
-
     renderAlerts();
 }
 
-function checkAlerts(aqi, pmsOk) {
+function checkAlerts(aqi) {
 
     const idx = aqiIndex(aqi);
 
     if (lastAqiIndex !== null && idx > lastAqiIndex) {
-
         pushAlert(`AQI rose to ${Math.round(aqi)} (${aqiName(aqi)}).`);
-
     } else if (lastAqiIndex !== null && idx < lastAqiIndex) {
-
         pushAlert(`AQI improved to ${Math.round(aqi)} (${aqiName(aqi)}).`);
     }
 
@@ -3749,457 +1363,275 @@ function checkAlerts(aqi, pmsOk) {
 
 let lastPmsState = null;
 
-function checkPms(pmsOk) {
+function checkPms(ok) {
 
-    if (lastPmsState !== null && lastPmsState !== pmsOk) {
-
-        pushAlert(pmsOk ? "PMS7003 particle sensor is back online." : "PMS7003 particle sensor went offline.");
+    if (lastPmsState !== null && lastPmsState !== ok) {
+        pushAlert(ok ? "PMS7003 particle sensor is back online." : "PMS7003 particle sensor went offline.");
     }
 
-    lastPmsState = pmsOk;
+    lastPmsState = ok;
 }
 
 
 /* =========================================================
-   TIMELINE  (Today's Data)
+   GAS CHART  (Live / 1H / 6H / 24H / 7D)
 ========================================================= */
 
-const TL_KEY = "aerosense_today_v2";
+const GAS = [
+    { k: "pm25", label: "PM2.5", color: "#8b5cf6" },
+    { k: "pm10", label: "PM10",  color: "#3b82f6" },
+    { k: "co",   label: "CO",    color: "#f59e0b" },
+    { k: "ch4",  label: "CH4",   color: "#22c55e" },
+    { k: "nh3",  label: "NH3",   color: "#ef4444" },
+    { k: "o3",   label: "O3",    color: "#38bdf8" }
+];
 
-let todaySamples = [];
+const LONG_KEY = "aerosense_long_v3";
+const LONG_STEP = 60000;
+const LONG_MAX = 10080;
 
-(function loadToday() {
+const RANGE_MS = { "1h": 3600000, "6h": 21600000, "24h": 86400000, "7d": 604800000 };
 
-    const raw = safeStorage(() => localStorage.getItem(TL_KEY));
+let longSeries = [];
+let liveRows = [];
+let lastLong = 0;
+let range = "live";
+let gasChart = null;
 
+(function loadLong() {
+
+    const raw = safeStorage(() => localStorage.getItem(LONG_KEY));
     if (!raw) return;
 
     try {
-
-        const obj = JSON.parse(raw);
-
-        const today = new Date().toDateString();
-
-        if (obj && obj.date === today && Array.isArray(obj.samples)) {
-
-            todaySamples = obj.samples;
-        }
-
+        const arr = JSON.parse(raw);
+        const cut = Date.now() - RANGE_MS["7d"];
+        if (Array.isArray(arr)) longSeries = arr.filter((r) => Array.isArray(r) && r[0] >= cut);
+        if (longSeries.length) lastLong = longSeries[longSeries.length - 1][0];
     } catch (e) {
-
-        todaySamples = [];
+        longSeries = [];
     }
 })();
 
-function saveToday() {
+let lastSave = 0;
 
-    safeStorage(() => {
-
-        localStorage.setItem(
-
-            TL_KEY,
-
-            JSON.stringify({
-                date: new Date().toDateString(),
-                samples: todaySamples.slice(-600)
-            })
-        );
-    });
-}
-
-const TL_SHOW = 48;
-
-function renderTimeline() {
-
-    const bar = $("tl-bar");
-
-    const labels = $("tl-labels");
-
-    const slice = todaySamples.slice(-TL_SHOW);
-
-    setText("tl-count", todaySamples.length + " samples");
-
-    bar.innerHTML = "";
-
-    labels.innerHTML = "";
-
-    if (!slice.length) return;
-
-    slice.forEach((s, i) => {
-
-        const seg = document.createElement("div");
-
-        seg.className = "tl-seg" + (i === slice.length - 1 ? " last" : "");
-
-        seg.style.background = aqiColor(s[1]);
-
-        seg.dataset.i = i;
-
-        bar.appendChild(seg);
-    });
-
-    const every = Math.max(1, Math.floor(slice.length / 6));
-
-    slice.forEach((s, i) => {
-
-        if (i % every !== 0 && i !== slice.length - 1) return;
-
-        const span = document.createElement("span");
-
-        span.textContent = hhmm(s[0]);
-
-        span.style.left = ((i + .5) / slice.length) * 100 + "%";
-
-        labels.appendChild(span);
-    });
-}
-
-$("tl-bar").addEventListener("mousemove", (e) => {
-
-    const seg = e.target.closest(".tl-seg");
-
-    const tip = $("tl-tip");
-
-    if (!seg) {
-
-        tip.classList.remove("show");
-
-        return;
-    }
-
-    const slice = todaySamples.slice(-TL_SHOW);
-
-    const s = slice[Number(seg.dataset.i)];
-
-    if (!s) return;
-
-    const rect = $("tl-track").getBoundingClientRect();
-
-    const segRect = seg.getBoundingClientRect();
-
-    tip.textContent = hhmmss(s[0]) + " · AQI " + Math.round(s[1]);
-
-    tip.style.left = segRect.left - rect.left + segRect.width / 2 + "px";
-
-    tip.classList.add("show");
-});
-
-$("tl-bar").addEventListener("mouseleave", () => $("tl-tip").classList.remove("show"));
-
-$("tl-go").addEventListener("click", () => showView("history"));
-
-function addTodaySample(aqi) {
-
-    const last = todaySamples[todaySamples.length - 1];
+function saveLong() {
 
     const now = Date.now();
+    if (now - lastSave < 60000) return;
+    lastSave = now;
 
-    if (last && now - last[0] < 4000) return;
-
-    todaySamples.push([now, Number(aqi)]);
-
-    if (todaySamples.length > 800) todaySamples.shift();
-
-    saveToday();
-
-    renderTimeline();
+    safeStorage(() => localStorage.setItem(LONG_KEY, JSON.stringify(longSeries.slice(-LONG_MAX))));
 }
 
-renderTimeline();
+function currentRow() {
 
+    const row = [Date.now()];
+    let any = false;
 
-/* =========================================================
-   HISTORY CHART
-========================================================= */
+    GAS.forEach((g) => {
 
-let focusMetric = "aqi";
+        const h = hist[g.k];
+        const v = h.length ? h[h.length - 1].v : null;
 
-let histChart = null;
+        row.push(v);
 
-function buildChips() {
-
-    const box = $("metric-chips");
-
-    box.innerHTML = "";
-
-    Object.keys(METRICS).forEach((k) => {
-
-        const b = document.createElement("button");
-
-        b.className = "mchip" + (k === focusMetric ? " active" : "");
-
-        b.textContent = METRICS[k].label;
-
-        b.dataset.metric = k;
-
-        b.addEventListener("click", () => {
-
-            focusMetric = k;
-
-            buildChips();
-
-            renderHistory();
-
-            markSelectedTile();
-        });
-
-        box.appendChild(b);
+        if (v !== null) any = true;
     });
+
+    return any ? row : null;
 }
 
-function initHistChart() {
+function recordRows() {
 
-    const ctx = $("hist-chart").getContext("2d");
+    const row = currentRow();
+    if (!row) return;
 
-    const g = ctx.createLinearGradient(0, 0, 0, 320);
+    liveRows.push(row);
+    if (liveRows.length > 90) liveRows.shift();
 
-    g.addColorStop(0, "rgba(20,22,26,.18)");
+    if (row[0] - lastLong >= LONG_STEP) {
 
-    g.addColorStop(1, "rgba(20,22,26,0)");
+        lastLong = row[0];
 
-    histChart = new Chart(ctx, {
+        longSeries.push(row);
+        if (longSeries.length > LONG_MAX) longSeries.shift();
+
+        saveLong();
+    }
+}
+
+function getRows() {
+
+    if (range === "live") return liveRows.slice(-60);
+
+    const cut = Date.now() - RANGE_MS[range];
+
+    let rows = longSeries.filter((r) => r[0] >= cut);
+
+    const stride = Math.ceil(rows.length / 160);
+
+    if (stride > 1) rows = rows.filter((_, i) => i % stride === 0);
+
+    return rows;
+}
+
+function labelFor(ts) {
+
+    if (range === "7d") {
+        return new Date(ts).toLocaleDateString("en-US", { weekday: "short" }) + " " + hhmm(ts);
+    }
+
+    return range === "live" ? hhmmss(ts) : hhmm(ts);
+}
+
+function initChart() {
+
+    gasChart = new Chart($("gas-chart").getContext("2d"), {
 
         type: "line",
 
         data: {
-
             labels: [],
-
-            datasets: [{
-
+            datasets: GAS.map((g) => ({
+                label: g.label,
                 data: [],
-
-                borderColor: "#14161a",
-
-                backgroundColor: g,
-
-                borderWidth: 1.6,
-
+                borderColor: g.color,
+                backgroundColor: g.color + "20",
+                borderWidth: 1.8,
                 pointRadius: 0,
-
-                pointHoverRadius: 5,
-
-                pointHoverBackgroundColor: "#e4ff2b",
-
-                pointHoverBorderColor: "#14161a",
-
-                pointHoverBorderWidth: 1.5,
-
-                tension: .38,
-
-                fill: true
-            }]
+                pointHoverRadius: 4,
+                tension: .42,
+                fill: true,
+                spanGaps: true
+            }))
         },
 
         options: {
 
             responsive: true,
-
             maintainAspectRatio: false,
-
-            animation: { duration: 400 },
-
+            animation: { duration: 350 },
             interaction: { intersect: false, mode: "index" },
 
             plugins: {
-
                 legend: { display: false },
-
-                tooltip: {
-
-                    backgroundColor: "#14161a",
-
-                    titleColor: "#e4ff2b",
-
-                    bodyColor: "#fff",
-
-                    displayColors: false
-                }
+                tooltip: { backgroundColor: "#111827", titleColor: "#fff", bodyColor: "#e5e7eb", padding: 10 }
             },
 
             scales: {
 
                 x: {
-
-                    grid: { color: "rgba(20,22,26,.06)" },
-
-                    ticks: {
-
-                        color: "#9a9da3",
-
-                        maxTicksLimit: 6,
-
-                        font: { size: 9 }
-                    }
+                    grid: { color: "rgba(17,24,39,.07)" },
+                    ticks: { color: "#374151", maxTicksLimit: 7, font: { size: 11 } }
                 },
 
                 y: {
-
-                    grid: { color: "rgba(20,22,26,.06)" },
-
-                    ticks: {
-
-                        color: "#5d6168",
-
-                        font: { family: "monospace", size: 9 }
-                    }
+                    beginAtZero: true,
+                    suggestedMax: 60,
+                    grid: { color: "rgba(17,24,39,.07)" },
+                    title: { display: true, text: "Concentration", color: "#374151", font: { size: 12, weight: "500" } },
+                    ticks: { color: "#374151", font: { size: 11 } }
                 }
             }
         }
     });
-}
 
-function renderHistory() {
+    $("legend").innerHTML = GAS.map((g, i) =>
+        `<button data-i="${i}"><i style="background:${g.color}"></i>${g.label}</button>`
+    ).join("");
 
-    if (!histChart) return;
+    $("legend").querySelectorAll("button").forEach((b) => {
 
-    const series = hist[focusMetric] || [];
+        b.addEventListener("click", () => {
 
-    histChart.data.labels = series.map((p) => hhmmss(p.t));
+            const i = Number(b.dataset.i);
+            const vis = gasChart.isDatasetVisible(i);
 
-    histChart.data.datasets[0].data = series.map((p) => p.v);
+            gasChart.setDatasetVisibility(i, !vis);
+            b.classList.toggle("off", vis);
+            gasChart.update();
+        });
+    });
 
-    const meta = METRICS[focusMetric];
+    document.querySelectorAll("#range button").forEach((b) => {
 
-    histChart.data.datasets[0].label = meta.label;
+        b.addEventListener("click", () => {
 
-    histChart.update("none");
+            range = b.dataset.r;
 
-    if (series.length) {
+            document.querySelectorAll("#range button").forEach((x) => x.classList.toggle("active", x === b));
 
-        const vals = series.map((p) => p.v);
-
-        const min = Math.min(...vals);
-
-        const max = Math.max(...vals);
-
-        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-
-        setText("st-min", num(min, meta.dec));
-
-        setText("st-avg", num(avg, meta.dec));
-
-        setText("st-max", num(max, meta.dec));
-
-        setText("st-n", series.length);
-
-    } else {
-
-        setText("st-min", "--");
-
-        setText("st-avg", "--");
-
-        setText("st-max", "--");
-
-        setText("st-n", 0);
-    }
-}
-
-function markSelectedTile() {
-
-    document.querySelectorAll(".tile[data-metric]").forEach((t) => {
-
-        t.classList.toggle("selected", t.dataset.metric === focusMetric && currentView === "history");
+            renderChart();
+        });
     });
 }
 
-document.querySelectorAll(".tile[data-metric]").forEach((tile) => {
+function renderChart() {
 
-    tile.addEventListener("click", () => {
+    if (!gasChart) return;
 
-        focusMetric = tile.dataset.metric;
+    const rows = getRows();
 
-        buildChips();
+    gasChart.data.labels = rows.map((r) => labelFor(r[0]));
 
-        showView("history");
-
-        markSelectedTile();
+    GAS.forEach((g, i) => {
+        gasChart.data.datasets[i].data = rows.map((r) => r[i + 1]);
     });
-});
 
-document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", markSelectedTile));
+    gasChart.update("none");
+}
 
 
 /* =========================================================
-   MAP
+   MAP + LOCATION
 ========================================================= */
 
+let mapRef = null;
 let mapMarker = null;
-
 let mapCircle = null;
-
 let hasCentered = false;
-
 let lastLat = null;
-
 let lastLon = null;
-
 let lastGeoKey = null;
 
 const pinIcon = L.divIcon({
-
     className: "",
-
     html: '<div class="pin"><div class="ring"></div><div class="core"></div></div>',
-
     iconSize: [22, 22],
-
     iconAnchor: [11, 11]
 });
 
 function initMap() {
 
-    mapRef = L.map("device-map", {
-
-        zoomControl: true,
-
-        zoomSnap: .25,
-
-        inertia: true
-    }).setView([22.5726, 88.3639], 5);
+    mapRef = L.map("device-map", { zoomControl: true, zoomSnap: .25, inertia: true })
+        .setView(DEFAULT_POS, 5);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-
         maxZoom: 19,
-
         attribution: "&copy; OpenStreetMap contributors"
-
     }).addTo(mapRef);
 
-    mapMarker = L.marker([22.5726, 88.3639], { icon: pinIcon, opacity: 0 }).addTo(mapRef);
+    mapMarker = L.marker(DEFAULT_POS, { icon: pinIcon, opacity: 0 }).addTo(mapRef);
 
-    mapCircle = L.circle([22.5726, 88.3639], {
-
-        radius: 50,
-
-        color: "#14161a",
-
-        weight: 1,
-
-        fillColor: "#e4ff2b",
-
-        fillOpacity: 0,
-
-        opacity: 0
-
+    mapCircle = L.circle(DEFAULT_POS, {
+        radius: 50, color: "#16a34a", weight: 1, fillColor: "#22c55e", fillOpacity: 0, opacity: 0
     }).addTo(mapRef);
 
     window.addEventListener("resize", () => mapRef.invalidateSize());
+
+    setTimeout(() => mapRef.invalidateSize(), 400);
 }
 
 function distanceMeters(lat1, lon1, lat2, lon2) {
 
     const R = 6371000;
-
     const rad = (d) => (d * Math.PI) / 180;
 
     const dLat = rad(lat2 - lat1);
-
     const dLon = rad(lon2 - lon1);
 
-    const a =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(dLon / 2) ** 2;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(dLon / 2) ** 2;
 
     return 2 * R * Math.asin(Math.sqrt(a));
 }
@@ -4210,9 +1642,7 @@ async function reverseGeocode(lat, lon) {
 
         const url =
             "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=" +
-            encodeURIComponent(lat) +
-            "&lon=" +
-            encodeURIComponent(lon);
+            encodeURIComponent(lat) + "&lon=" + encodeURIComponent(lon);
 
         const res = await fetch(url, { headers: { Accept: "application/json" } });
 
@@ -4223,7 +1653,6 @@ async function reverseGeocode(lat, lon) {
         return json && json.display_name ? json.display_name : "";
 
     } catch (e) {
-
         return "";
     }
 }
@@ -4232,31 +1661,21 @@ async function updateGPS(data) {
 
     const fix =
         data.gps_fix === true &&
-        data.latitude !== null &&
-        data.longitude !== null &&
-        data.latitude !== undefined &&
-        data.longitude !== undefined;
+        data.latitude !== null && data.longitude !== null &&
+        data.latitude !== undefined && data.longitude !== undefined;
 
     const state = $("loc-state");
 
     if (!fix) {
 
         state.textContent = "WAITING";
+        state.classList.remove("ok");
 
         setText("loc-name", "Waiting for GPS satellite fix...");
-
-        setText("map-place", "Waiting for GPS fix...");
-
-        setText("map-coords", "-- , --");
-
         setText("loc-lat", "--");
-
         setText("loc-lon", "--");
-
         setText("loc-sats", data.satellites ?? "--");
-
         setText("loc-acc", "--");
-
         setText("pop-gps", "WAITING");
 
         $("loc-link").classList.add("hide");
@@ -4265,66 +1684,45 @@ async function updateGPS(data) {
     }
 
     const lat = Number(data.latitude);
-
     const lon = Number(data.longitude);
 
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
 
     let acc = Number(data.accuracy);
-
     if (!Number.isFinite(acc) || acc <= 0) acc = null;
 
     state.textContent = "GPS FIX";
+    state.classList.add("ok");
 
     setText("loc-lat", lat.toFixed(5));
-
     setText("loc-lon", lon.toFixed(5));
-
     setText("loc-sats", data.satellites ?? "--");
-
     setText("loc-acc", acc !== null ? "±" + Math.round(acc) + " m" : "--");
 
-    setText("map-coords", lat.toFixed(6) + " , " + lon.toFixed(6));
-
     setText("pop-gps", "FIX · " + (data.satellites ?? "--") + " sats");
-
     setText("pop-sats", data.satellites ?? "--");
-
     setText("pop-acc", acc !== null ? "±" + Math.round(acc) + " m" : "--");
 
     const link = $("loc-link");
 
-    link.href =
-        data.maps_url ||
-        "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(lat + "," + lon);
-
+    link.href = data.maps_url || "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(lat + "," + lon);
     link.classList.remove("hide");
-
-    /* place name: ESP32 sends it, else browser geocodes */
 
     let place = (data.location || "").trim();
 
     if (!place) {
 
         const key = lat.toFixed(4) + "," + lon.toFixed(4);
-
-        const moved =
-            lastLat === null ? Infinity : distanceMeters(lastLat, lastLon, lat, lon);
+        const moved = lastLat === null ? Infinity : distanceMeters(lastLat, lastLon, lat, lon);
 
         if (lastGeoKey !== key && (moved > 30 || lastGeoKey === null)) {
-
             lastGeoKey = key;
-
             place = await reverseGeocode(lat, lon);
         }
     }
 
     if (place) {
-
         setText("loc-name", place);
-
-        setText("map-place", place);
-
         setText("fc-meta", "Forecast for " + place);
     }
 
@@ -4334,103 +1732,144 @@ async function updateGPS(data) {
 
         mapMarker.setLatLng(pos).setOpacity(1);
 
-        if (acc !== null) {
-
-            mapCircle.setLatLng(pos).setRadius(acc).setStyle({ opacity: .5, fillOpacity: .1 });
-
-        } else {
-
-            mapCircle.setLatLng(pos).setStyle({ opacity: 0, fillOpacity: 0 });
-        }
+        if (acc !== null) mapCircle.setLatLng(pos).setRadius(acc).setStyle({ opacity: .6, fillOpacity: .12 });
+        else mapCircle.setLatLng(pos).setStyle({ opacity: 0, fillOpacity: 0 });
 
         if (!hasCentered) {
-
             mapRef.flyTo(pos, acc !== null && acc <= 15 ? 17 : 16, { duration: 1.4 });
-
             hasCentered = true;
-
         } else {
-
             mapRef.panTo(pos, { animate: true, duration: .9 });
         }
     }
 
-    lastLat = lat;
+    if (lastLat === null) fetchWeather(lat, lon);
 
+    lastLat = lat;
     lastLon = lon;
 }
 
 
 /* =========================================================
-   FORECAST + ADVICE
+   WEATHER (wind + pressure from Open-Meteo, by device location)
 ========================================================= */
+
+let wxOverride = false;
+
+function compass(deg) {
+    return ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(deg / 45) % 8];
+}
+
+function setWind(speed, deg, pres) {
+
+    if (Number.isFinite(speed)) setText("ov-wind", num(speed, 1));
+
+    if (Number.isFinite(deg)) {
+        setText("ov-winddir", compass(deg));
+        $("wind-arrow").style.transform = `rotate(${deg}deg)`;
+    }
+
+    if (Number.isFinite(pres)) setText("ov-pres", Math.round(pres));
+}
+
+async function fetchWeather(lat, lon) {
+
+    if (wxOverride) return;
+
+    try {
+
+        const url =
+            "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
+            "&current=wind_speed_10m,wind_direction_10m,surface_pressure&wind_speed_unit=kmh";
+
+        const res = await fetch(url);
+
+        if (!res.ok) throw new Error("wx");
+
+        const j = await res.json();
+        const c = j.current || {};
+
+        setWind(Number(c.wind_speed_10m), Number(c.wind_direction_10m), Number(c.surface_pressure));
+
+    } catch (e) { /* keep previous values */ }
+}
+
+setInterval(() => fetchWeather(lastLat ?? DEFAULT_POS[0], lastLon ?? DEFAULT_POS[1]), 600000);
+
+
+/* =========================================================
+   AQI / FORECAST / ADVICE
+========================================================= */
+
+function setAqi(aqi, data) {
+
+    const idx = aqiIndex(aqi);
+    const name = data.category || aqiName(aqi);
+
+    setText("ov-aqi", Math.round(aqi));
+    setText("ov-category", name);
+    setText("aq-word", name);
+    setText("aq-desc", AQ_DESC[idx]);
+
+    const pill = $("ov-category");
+    pill.style.background = LEVEL_COLORS[idx];
+    pill.style.color = idx === 2 ? "#3b2f00" : "#fff";
+
+    $("aq-word").style.color = LEVEL_DARK[idx];
+
+    drawGauge(aqi);
+
+    setText("fc0-pill", "AQI " + Math.round(aqi));
+    stylePill("fc0-pill", aqi);
+    $("fc0-ico").innerHTML = wxIcon(aqi, new Date().getHours());
+}
+
+function stylePill(id, aqi) {
+
+    const el = $(id);
+    const idx = aqiIndex(aqi);
+
+    el.style.background = LEVEL_COLORS[idx] + "30";
+    el.style.color = LEVEL_DARK[idx];
+}
 
 function updateForecast(data) {
 
-    for (let h = 1; h <= 3; h++) {
-
-        setText("fc" + h + "-val", "--");
-
-        setText("fc" + h + "-cat", "--");
-
-        $("fc" + h + "-bar").style.width = "0%";
-    }
-
-    setText("ov-next", "--");
-
-    setText("ov-next-sub", "waiting");
-
-    if (!Array.isArray(data.future_forecast) || !data.future_forecast.length) {
-
-        return;
-    }
+    if (!Array.isArray(data.future_forecast) || !data.future_forecast.length) return;
 
     data.future_forecast.forEach((item) => {
 
         const h = Number(item.hours_ahead);
-
         if (h < 1 || h > 3) return;
 
         const aqi = Number(item.aqi);
 
-        setText("fc" + h + "-val", Number.isFinite(aqi) ? Math.round(aqi) : "--");
+        setText("fc" + h + "-pill", "AQI " + (Number.isFinite(aqi) ? Math.round(aqi) : "--"));
 
-        setText("fc" + h + "-cat", item.category ?? aqiName(aqi));
-
-        $("fc" + h + "-bar").style.width = clamp((aqi / 300) * 100, 3, 100) + "%";
-
-        if (h === 1) {
-
-            setText("ov-next", Number.isFinite(aqi) ? Math.round(aqi) : "--");
-
-            setText("ov-next-sub", item.category ?? aqiName(aqi));
+        if (Number.isFinite(aqi)) {
+            stylePill("fc" + h + "-pill", aqi);
+            $("fc" + h + "-ico").innerHTML = wxIcon(aqi, new Date(Date.now() + h * 3600000).getHours());
         }
     });
 
-    const src = data.forecast_source ? "Source: " + data.forecast_source : "";
+    if (data.forecast_source) {
 
-    const prev = $("fc-meta").textContent;
+        const prev = $("fc-meta").textContent;
 
-    if (src && !prev.includes("Source")) setText("fc-meta", prev + " · " + src);
+        if (!prev.includes("Source")) setText("fc-meta", prev + " · Source: " + data.forecast_source);
+    }
 }
 
 function updateAdvice(data) {
 
-    const cat = data.ml_category || data.present_category || data.category;
+    const ml = data.ml_prediction !== undefined ? "ML AQI " + Math.round(Number(data.ml_prediction)) : "sensor + ML";
 
-    if (cat) setText("ai-cat", cat);
+    setText("ov-aqi-sub", ml);
 
-    const preds = [];
-
-    if (data.ml_prediction !== undefined) preds.push("ML AQI " + Math.round(Number(data.ml_prediction)));
-
-    setText("ai-pred", preds.join(" · "));
+    const list = $("adv-list");
 
     if (Array.isArray(data.advice) && data.advice.length) {
-
-        $("advice-lines").innerHTML = data.advice
-            .map((a, i) => `<div class="advice-line" style="animation-delay:${i * .08}s"><i></i><span>${a}</span></div>`)
-            .join("");
+        list.innerHTML = data.advice.slice(0, 2).map((a) => `<li>${a}</li>`).join("");
     }
 }
 
@@ -4455,22 +1894,8 @@ async function handleData(data) {
 
         const aqi = Number(data.final_aqi);
 
-        const color = aqiColor(aqi);
-
-        document.documentElement.style.setProperty("--aqi", color);
-
-        setText("ov-aqi", Math.round(aqi));
-
-        setText("ov-category", data.category || aqiName(aqi));
-
-        setText("ov-aqi-sub", "sensor + ML");
-
-        drawOrbWire(color);
-
+        setAqi(aqi, data);
         pushHist("aqi", aqi, ts);
-
-        addTodaySample(aqi);
-
         checkAlerts(aqi);
     }
 
@@ -4479,31 +1904,21 @@ async function handleData(data) {
     /* ---------- environment ---------- */
 
     if (data.temp !== undefined) {
-
         setText("ov-temp", num(data.temp, 1));
-
         pushHist("temp", data.temp, ts);
     }
 
     if (data.hum !== undefined) {
-
-        setText("ov-hum", num(data.hum, 1));
-
+        setText("ov-hum", num(data.hum, 0));
         pushHist("hum", data.hum, ts);
-
-        const h = Number(data.hum);
-
-        setText("ov-hum-sub", h < 30 ? "dry" : h < 60 ? "comfortable" : h < 80 ? "humid" : "very humid");
     }
 
-    if (data.temp !== undefined) {
-
-        const t = Number(data.temp);
-
-        setText("ov-temp-sub", t < 18 ? "cool" : t < 28 ? "comfortable" : t < 35 ? "warm" : "hot");
+    if (data.wind_speed !== undefined || data.pressure !== undefined) {
+        wxOverride = true;
+        setWind(Number(data.wind_speed), Number(data.wind_dir), Number(data.pressure));
     }
 
-    /* ---------- particles (PMS7003) ---------- */
+    /* ---------- particles ---------- */
 
     const pmsOk = data.pms_ok !== false;
 
@@ -4511,53 +1926,42 @@ async function handleData(data) {
 
     setText("pop-pms", pmsOk ? "PMS7003 ONLINE" : "PMS7003 OFFLINE");
 
-    if (data.pm25 !== undefined) {
+    ["pm25", "pm1", "pm10"].forEach((k) => {
 
-        updateTile("pm25", data.pm25, { offline: !pmsOk });
+        if (data[k] === undefined) return;
 
-        if (pmsOk) pushHist("pm25", data.pm25, ts);
-    }
+        if (pmsOk) pushHist(k, data[k], ts);
 
-    if (data.pm1 !== undefined) {
+        updateTile(k, data[k], { offline: !pmsOk });
+    });
 
-        updateTile("pm1", data.pm1, { offline: !pmsOk });
-
-        if (pmsOk) pushHist("pm1", data.pm1, ts);
-    }
-
-    if (data.pm10 !== undefined) {
-
-        updateTile("pm10", data.pm10, { offline: !pmsOk });
-
-        if (pmsOk) pushHist("pm10", data.pm10, ts);
-    }
-
-    /* ---------- dust (GP2Y1010) ---------- */
+    /* ---------- dust ---------- */
 
     if (data.gp2y_ugm3 !== undefined) {
 
         const d = Number(data.gp2y_ugm3);
 
+        pushHist("dust", d, ts);
         updateTile("dust", d);
 
-        pushHist("dust", d, ts);
-
-        const v = data.gp2y_v !== undefined ? num(data.gp2y_v, 3) + " V" : "-- V";
-
-        setText("s-dust", v + " · " + num(d / 1000, 3) + " mg/m³");
+        if (data.gp2y_v !== undefined) setText("sub-dust", "Dust Density · " + num(data.gp2y_v, 2) + " V");
     }
 
     /* ---------- gases ---------- */
 
     ["co", "ch4", "nh3", "o3"].forEach((k) => {
 
-        if (data[k] !== undefined) {
+        if (data[k] === undefined) return;
 
-            updateTile(k, data[k]);
-
-            pushHist(k, data[k], ts);
-        }
+        pushHist(k, data[k], ts);
+        updateTile(k, data[k]);
     });
+
+    /* ---------- chart ---------- */
+
+    recordRows();
+
+    if (range === "live" || ts - lastLong < 1500) renderChart();
 
     /* ---------- location / forecast / advice ---------- */
 
@@ -4566,8 +1970,6 @@ async function handleData(data) {
     updateForecast(data);
 
     updateAdvice(data);
-
-    if (currentView === "history") renderHistory();
 }
 
 
@@ -4576,9 +1978,7 @@ async function handleData(data) {
 ========================================================= */
 
 function setConn(online) {
-
     $("conn-dot").classList.toggle("off", !online);
-
     setText("conn-text", online ? "LIVE" : "OFFLINE");
 }
 
@@ -4589,15 +1989,10 @@ setInterval(() => {
     const age = (Date.now() - lastSeen) / 1000;
 
     if (age > 45) {
-
         $("conn-dot").classList.add("off");
-
         setText("conn-text", "STALE");
-
     } else if (!DEMO) {
-
         $("conn-dot").classList.remove("off");
-
         setText("conn-text", "LIVE");
     }
 
@@ -4605,125 +2000,86 @@ setInterval(() => {
 
 
 /* =========================================================
-   SOCKET.IO  /  DEMO MODE
+   SOCKET.IO  /  DEMO MODE  (add ?demo to the URL)
 ========================================================= */
 
 function startSocket() {
 
     const socket = io(isHosted ? undefined : RENDER_URL, {
-
         transports: ["websocket", "polling"],
-
         reconnection: true,
-
         reconnectionDelay: 1000,
-
         reconnectionDelayMax: 5000
     });
 
     socket.on("connect", () => setConn(true));
-
     socket.on("disconnect", () => setConn(false));
-
     socket.on("live_data", handleData);
 }
 
 function startDemo() {
 
     setConn(true);
-
     setText("conn-text", "DEMO");
 
-    let aqi = 38;
-
-    let pm25 = 22;
-
+    let aqi = 42;
+    let pm25 = 24;
     let t = 0;
 
     const tick = () => {
 
         t++;
 
-        aqi = clamp(aqi + (Math.random() - .45) * 9, 12, 190);
+        aqi = clamp(aqi + (Math.random() - .47) * 7, 12, 190);
+        pm25 = clamp(pm25 + (Math.random() - .48) * 5, 6, 120);
 
-        pm25 = clamp(pm25 + (Math.random() - .48) * 6, 6, 120);
-
-        const data = {
+        handleData({
 
             device_id: "AQI-001",
-
             final_aqi: Math.round(aqi),
-
             category: aqiName(aqi),
-
             dominant: "PM2.5",
 
-            temp: 32.8 + Math.sin(t / 8),
+            temp: 28.6 + Math.sin(t / 8),
+            hum: 62 + Math.cos(t / 9) * 3,
 
-            hum: 68 + Math.cos(t / 9) * 3,
-
-            co: 0.3 + Math.random() * .5,
-
-            ch4: 52 + Math.random() * 14,
-
-            nh3: 1 + Math.random() * 1.2,
-
-            o3: 6 + Math.random() * 9,
+            co: 0.76 + Math.random() * .2,
+            ch4: 40 + Math.random() * 14,
+            nh3: 0.23 + Math.random() * .3,
+            o3: 20 + Math.random() * 9,
 
             pms_ok: true,
-
             pm1: Math.round(pm25 * .6),
-
             pm25: Math.round(pm25),
-
-            pm10: Math.round(pm25 * 1.35),
+            pm10: Math.round(pm25 * 1.7),
 
             gp2y_v: 0.9 + Math.random() * .25,
-
-            gp2y_ugm3: 8 + Math.random() * 40,
+            gp2y_ugm3: 55 + Math.random() * 30,
 
             gps_fix: true,
-
             latitude: 22.96154 + Math.sin(t / 30) * 0.0002,
-
             longitude: 88.42096 + Math.cos(t / 30) * 0.0002,
-
             satellites: 12,
-
             accuracy: 4.2,
-
-            location: "Kalyani City",
+            location: "Kalyani City, West Bengal",
 
             future_forecast: [
-
-                { hours_ahead: 1, aqi: Math.round(aqi * .92), category: aqiName(aqi * .92) },
-
-                { hours_ahead: 2, aqi: Math.round(aqi * .86), category: aqiName(aqi * .86) },
-
-                { hours_ahead: 3, aqi: Math.round(aqi * 1.05), category: aqiName(aqi * 1.05) }
+                { hours_ahead: 1, aqi: Math.round(aqi * 1.07) },
+                { hours_ahead: 2, aqi: Math.round(aqi * 1.14) },
+                { hours_ahead: 3, aqi: Math.round(aqi * 1.09) }
             ],
 
             forecast_source: "AeroSense ML (demo)",
-
             ml_prediction: Math.round(aqi),
 
-            ml_category: aqiName(aqi),
-
             advice: [
-
                 "Air quality is " + aqiName(aqi).toLowerCase() + ".",
-
-                "Normal outdoor activities are safe.",
-
-                "No special precautions are required."
+                "Normal outdoor activities are safe."
             ]
-        };
-
-        handleData(data);
+        });
     };
 
     tick();
-
     setInterval(tick, 2500);
 }
 
@@ -4735,20 +2091,11 @@ function startDemo() {
 document.addEventListener("DOMContentLoaded", () => {
 
     initMap();
+    initChart();
+    renderChart();
+    fetchWeather(DEFAULT_POS[0], DEFAULT_POS[1]);
 
-    initHistChart();
-
-    buildChips();
-
-    registerWave("art-pm1", 6, 18);
-
-    registerWave("art-o3", 6, 18);
-
-    requestAnimationFrame(animateWaves);
-
-    drawOrbWire("#35b57a");
-
-    ["pm25", "pm10", "co", "ch4", "nh3", "dust"].forEach((k) => drawArt(k, TILE_ART[k], 0));
+    for (let h = 0; h <= 3; h++) $("fc" + h + "-ico").innerHTML = wxIcon(NaN, new Date(Date.now() + h * 3600000).getHours());
 
     if (DEMO) startDemo();
     else startSocket();
